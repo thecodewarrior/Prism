@@ -7,7 +7,7 @@ import com.teamwizardry.mirror.type.TypeMirror
 import com.teamwizardry.prism.internal.identityMapOf
 import com.teamwizardry.prism.internal.unmodifiableView
 
-class Prism<T: Serializer> {
+class Prism<T: Serializer<*>> {
     private val _serializers = mutableListOf<T>()
     val serializers: List<T> = _serializers.unmodifiableView()
 
@@ -18,20 +18,28 @@ class Prism<T: Serializer> {
 
     fun get(mirror: TypeMirror): Lazy<T> {
         if(!isFullyConcrete(mirror))
-            throw ImpossibleSerializerException("$mirror isn't fully concrete")
+            throw InvalidTypeException("$mirror isn't fully concrete")
         mirror as ConcreteTypeMirror
 
         _cache[mirror]?.also {
             return it
         }
 
-        _serializers.find { it.type == mirror }?.also {
-            lazyOf(it).also { _cache[mirror] = it }
+        val serializer = _serializers.fold<T, T?>(null) { acc, serializer ->
+            if (serializer.type.isAssignableFrom(mirror) &&
+                (acc == null || acc.type.isAssignableFrom(serializer.type))
+            ) {
+                serializer
+            } else {
+                acc
+            }
+        }
+        if(serializer != null) {
+            return lazyOf(serializer).also { _cache[mirror] = it }
         }
 
         val factory = _factories.fold<SerializerFactory<T>, SerializerFactory<T>?>(null) { acc, factory ->
-            if (factory.pattern.isAssignableFrom(mirror) &&
-                (acc == null || acc.pattern.isAssignableFrom(factory.pattern))
+            if (factory.pattern.isAssignableFrom(mirror) && (acc == null || acc.pattern.isAssignableFrom(factory.pattern))
             ) {
                 factory
             } else {
@@ -39,7 +47,7 @@ class Prism<T: Serializer> {
             }
         } ?: throw SerializerNotFoundException("Could not find a serializer for $mirror")
 
-        val lazy = lazy { factory.create(mirror) }
+        val lazy = lazy { factory.create(this, mirror) }
         _cache[mirror] = lazy
         return lazy
     }
@@ -61,6 +69,9 @@ class Prism<T: Serializer> {
             return concreteCache.getOrPut(mirror) { computeIsFullyConcrete(mirror) }
         }
 
+        //TODO tests
+        // this is incorrect if a generic method's type arguments aren't used in the enclosed type. It will think that
+        // that type isn't concrete.
         private fun computeIsFullyConcrete(mirror: TypeMirror): Boolean {
             when(mirror) {
                 is ArrayMirror -> {
@@ -70,9 +81,9 @@ class Prism<T: Serializer> {
                 is ClassMirror -> {
                     if (mirror.typeParameters.any { !isFullyConcrete(it) }) return false
                     if (mirror.enclosingClass?.let { isFullyConcrete(it) } == false) return false
-                    mirror.enclosingMethod?.also { enclosingMethod ->
-                        if (enclosingMethod.typeParameters.any { !isFullyConcrete(it) }) return false
-                        if (!isFullyConcrete(enclosingMethod.enclosingClass)) return false
+                    mirror.enclosingExecutable?.also { enclosingExecutable ->
+                        if (enclosingExecutable.typeParameters.any { !isFullyConcrete(it) }) return false
+                        if (!isFullyConcrete(enclosingExecutable.enclosingClass)) return false
                     }
                     return true
                 }

@@ -7,7 +7,7 @@ open class PrismException: RuntimeException {
     constructor(cause: Throwable?): super(cause)
 }
 
-class ImpossibleSerializerException: PrismException {
+class InvalidTypeException: PrismException {
     constructor(): super()
     constructor(message: String?): super(message)
     constructor(message: String?, cause: Throwable?): super(message, cause)

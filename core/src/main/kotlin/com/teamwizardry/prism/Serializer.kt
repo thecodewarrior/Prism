@@ -1,14 +1,19 @@
 package com.teamwizardry.prism
 
 import com.teamwizardry.mirror.Mirror
-import com.teamwizardry.mirror.type.ConcreteTypeMirror
 import com.teamwizardry.mirror.type.TypeMirror
-import java.lang.reflect.AnnotatedParameterizedType
 
 abstract class Serializer<T> {
     val type: TypeMirror
 
-    init {
+    constructor(type: TypeMirror) {
+        this.type = type
+
+        if(!Prism.isFullyConcrete(this.type))
+            throw InvalidTypeException("$type isn't fully concrete")
+    }
+
+    constructor() {
         var type = Mirror.reflectClass(this.javaClass)
         while(type.raw != serializerRaw) {
             type = type.superclass ?: throw IllegalStateException()
@@ -16,7 +21,7 @@ abstract class Serializer<T> {
         this.type = type.typeParameters[0]
 
         if(!Prism.isFullyConcrete(this.type))
-            throw ImpossibleSerializerException("$type isn't fully concrete")
+            throw InvalidTypeException("$type isn't fully concrete")
     }
 
     private companion object {
