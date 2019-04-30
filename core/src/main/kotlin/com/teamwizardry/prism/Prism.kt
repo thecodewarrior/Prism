@@ -16,14 +16,14 @@ class Prism<T: Serializer<*>> {
 
     private val _cache = mutableMapOf<TypeMirror, Lazy<T>>()
 
-    fun get(mirror: TypeMirror): Lazy<T> {
-        if(!isFullyConcrete(mirror))
-            throw InvalidTypeException("$mirror isn't fully concrete")
-        mirror as ConcreteTypeMirror
-
+    operator fun get(mirror: TypeMirror): Lazy<T> {
         _cache[mirror]?.also {
             return it
         }
+
+        if(!isFullyConcrete(mirror))
+            throw InvalidTypeException("$mirror isn't fully concrete")
+        mirror as ConcreteTypeMirror
 
         val serializer = _serializers.fold<T, T?>(null) { acc, serializer ->
             if (serializer.type.isAssignableFrom(mirror) &&
@@ -52,14 +52,16 @@ class Prism<T: Serializer<*>> {
         return lazy
     }
 
-    fun register(factory: SerializerFactory<T>) {
+    fun register(factory: SerializerFactory<T>): Prism<T> {
         _factories.removeIf { it === factory }
         _factories.add(factory)
+        return this
     }
 
-    fun register(serializer: T) {
+    fun register(serializer: T): Prism<T> {
         _serializers.removeIf { it === serializer }
         _serializers.add(serializer)
+        return this
     }
 
     companion object {
@@ -83,7 +85,7 @@ class Prism<T: Serializer<*>> {
                     if (mirror.enclosingClass?.let { isFullyConcrete(it) } == false) return false
                     mirror.enclosingExecutable?.also { enclosingExecutable ->
                         if (enclosingExecutable.typeParameters.any { !isFullyConcrete(it) }) return false
-                        if (!isFullyConcrete(enclosingExecutable.enclosingClass)) return false
+                        if (!isFullyConcrete(enclosingExecutable.declaringClass)) return false
                     }
                     return true
                 }

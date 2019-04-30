@@ -74,6 +74,7 @@ fun ByteBuf.readVarLong(): Long {
     return i
 }
 
+//TODO optimize array instantiation. Read/write to/from existing array/list
 fun ByteBuf.writeBooleanArray(value: BooleanArray) {
     val len = value.size
     this.writeVarInt(len)

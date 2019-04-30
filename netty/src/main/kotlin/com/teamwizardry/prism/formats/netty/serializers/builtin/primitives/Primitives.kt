@@ -1,6 +1,8 @@
 package com.teamwizardry.prism.formats.netty.serializers.builtin.primitives
 
 import com.teamwizardry.prism.formats.netty.NettySerializer
+import com.teamwizardry.prism.formats.netty.readString
+import com.teamwizardry.prism.formats.netty.writeString
 import io.netty.buffer.ByteBuf
 
 /**

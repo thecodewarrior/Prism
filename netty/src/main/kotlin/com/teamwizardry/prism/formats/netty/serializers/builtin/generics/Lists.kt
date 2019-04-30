@@ -8,6 +8,7 @@ import com.teamwizardry.mirror.type.TypeMirror
 import com.teamwizardry.prism.InvalidTypeException
 import com.teamwizardry.prism.Prism
 import com.teamwizardry.prism.SerializerFactory
+import com.teamwizardry.prism.SerializerNotFoundException
 import com.teamwizardry.prism.formats.netty.NettySerializer
 import com.teamwizardry.prism.formats.netty.readBooleanArray
 import com.teamwizardry.prism.formats.netty.writeBooleanArray
@@ -31,34 +32,35 @@ object ListSerializerFactory : SerializerFactory<NettySerializer<*>>(Mirror.refl
 
         override fun deserialize(buf: ByteBuf, existing: List<Any?>?, syncing: Boolean): List<Any?> {
             if(existing == null) {
-                return createList(buf, existing, syncing)
+                return creationStyle.createList(buf, existing, syncing)
             } else {
-                return mutateList(buf, existing, syncing)
+                mutateList(buf, existing as MutableList<Any?>, syncing)
+                return existing
             }
         }
 
-        override fun mutateList(buf: ByteBuf, existing: List<Any?>?, syncing: Boolean): List<Any?> {
+        fun mutateList(buf: ByteBuf, existing: MutableList<Any?>, syncing: Boolean) {
             val nulls = buf.readBooleanArray()
 
-            while (array.size > nullsig.size)
-                array.removeAt(array.size - 1)
+            while (existing.size > nulls.size)
+                existing.removeAt(existing.lastIndex)
 
-            for (i in 0..nullsig.size - 1) {
-                val v = if (nullsig[i]) null else serGeneric.read(buf, array.getOrNull(i), syncing)
-                if (i >= array.size) {
-                    array.add(v)
+            for (i in 0 until nulls.size) {
+                val v = if (nulls[i]) null else componentSerializer.read(buf, null, syncing)
+                if (i >= existing.size) {
+                    existing.add(v)
                 } else {
-                    array[i] = v
+                    existing[i] = v
                 }
             }
         }
 
         override fun serialize(buf: ByteBuf, value: List<Any?>, syncing: Boolean) {
-            val nullsig = BooleanArray(value.size) { value[it] == null }
-            buf.writeBooleanArray(nullsig)
+            val nulls = BooleanArray(value.size) { value[it] == null }
+            buf.writeBooleanArray(nulls)
 
-            (0 until value.size)
-                    .filterNot { nullsig[it] }
+            (0 until value.size).asSequence()
+                    .filterNot { nulls[it] } // don't check == null again to avoid race conditions
                     .forEach { componentSerializer.write(buf, value[it]!!, syncing) }
         }
 
@@ -76,16 +78,24 @@ object ListSerializerFactory : SerializerFactory<NettySerializer<*>>(Mirror.refl
 //            }
 //        }
 
+        val creationStyle: CreationStyle
+
         init {
-            val collection = Mirror.reflectClass<Collection<*>>().specialize(component)
+            val collection = Mirror.reflectClass<Collection<*>>().withTypeArguments(component)
             val createWithCollection = mirror.declaredConstructors.find {
                 it.parameters.size == 1 && collection.isAssignableFrom(it.parameters[0].type)
             }
             val createWithArray = mirror.declaredConstructors.find {
                 it.parameters.size == 1 && it.parameters[0].type is ArrayMirror &&
-                    it.parameters[0].type.isAssignableFrom(Mirror.createArrayType(it.parameters[0].type, 1))
+                    it.parameters[0].type.isAssignableFrom(Mirror.createArrayType(it.parameters[0].type))
             }
             val zeroArg = mirror.declaredConstructors.find { it.parameters.isEmpty() }
+            creationStyle = when {
+                zeroArg != null -> CreateAddStyle(zeroArg)
+                createWithCollection != null -> CreateWithCollectionStyle(createWithCollection)
+                createWithArray != null -> CreateWithArrayStyle(createWithArray)
+                else -> throw InvalidTypeException("Couldn't find constructor")
+            }
         }
 
         companion object {

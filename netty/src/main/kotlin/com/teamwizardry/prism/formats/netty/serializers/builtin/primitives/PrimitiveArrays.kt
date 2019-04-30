@@ -1,6 +1,10 @@
 package com.teamwizardry.prism.formats.netty.serializers.builtin.primitives
 
 import com.teamwizardry.prism.formats.netty.NettySerializer
+import com.teamwizardry.prism.formats.netty.readString
+import com.teamwizardry.prism.formats.netty.readVarInt
+import com.teamwizardry.prism.formats.netty.writeString
+import com.teamwizardry.prism.formats.netty.writeVarInt
 import io.netty.buffer.ByteBuf
 
 object SerializeByteArray: NettySerializer<ByteArray>() {

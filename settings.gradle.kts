@@ -15,4 +15,5 @@ pluginManagement {
 
 rootProject.name = "Prism"
 include("core")
+include("reference")
 include("netty")

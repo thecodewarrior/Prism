@@ -36,11 +36,6 @@ dependencies {
     compile("com.github.TeamWizardry", "Mirror", "-SNAPSHOT")
 }
 
-java.sourceSets {
-    getByName("main").java.srcDirs("src/samples/kotlin")
-    getByName("main").java.srcDirs("src/samples/java")
-}
-
 tasks.withType<DokkaTask> {
     val out = "$projectDir/docs"
     outputFormat = "html"

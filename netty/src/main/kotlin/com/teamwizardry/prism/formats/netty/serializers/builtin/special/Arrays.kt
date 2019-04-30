@@ -28,7 +28,7 @@ object ArraySerializerFactory : SerializerFactory<NettySerializer<*>>(Mirror.ref
                 array = existing
             } else {
                 @Suppress("UNCHECKED_CAST")
-                array = ArrayReflect.newInstanceRaw(arrayType.component.java as Class<*>, nulls.size) as Array<Any?>
+                array = arrayType.newInstance(nulls.size) as Array<Any?>
             }
 
             for (i in 0 until nulls.size) {
