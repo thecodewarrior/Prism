@@ -22,7 +22,7 @@ class Prism<T: Serializer<*>> {
         }
 
         if(!isFullyConcrete(mirror))
-            throw InvalidTypeException("$mirror isn't fully concrete")
+            throw InvalidTypeException("$mirror isn't fully concrete. Type variables and wildcards can't be serialized.")
         mirror as ConcreteTypeMirror
 
         val serializer = _serializers.fold<T, T?>(null) { acc, serializer ->
@@ -39,15 +39,17 @@ class Prism<T: Serializer<*>> {
         }
 
         val factory = _factories.fold<SerializerFactory<T>, SerializerFactory<T>?>(null) { acc, factory ->
-            if (factory.pattern.isAssignableFrom(mirror) && (acc == null || acc.pattern.isAssignableFrom(factory.pattern))
+            if (
+                factory.pattern.isAssignableFrom(mirror) &&
+                (acc == null || acc.pattern.specificity <= factory.pattern.specificity)
             ) {
                 factory
             } else {
                 acc
             }
-        } ?: throw SerializerNotFoundException("Could not find a serializer for $mirror")
+        } ?: throw SerializerNotFoundException("Could not find a serializer factory for $mirror")
 
-        val lazy = lazy { factory.create(this, mirror) }
+        val lazy = lazy { factory.create(mirror) }
         _cache[mirror] = lazy
         return lazy
     }

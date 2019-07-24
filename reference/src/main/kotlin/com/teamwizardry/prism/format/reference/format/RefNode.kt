@@ -1,8 +1,6 @@
 package com.teamwizardry.prism.format.reference.format
 
-sealed class RefNode {
-
-}
+sealed class RefNode
 
 class ObjectNode private constructor(private val map: MutableMap<String, RefNode>): RefNode(), MutableMap<String, RefNode> by map {
     constructor(): this(mutableMapOf())
@@ -30,6 +28,12 @@ class ObjectNode private constructor(private val map: MutableMap<String, RefNode
 
     override fun hashCode(): Int {
         return map.hashCode()
+    }
+
+    override fun toString(): String {
+        return "{\n" + map.entries.sortedBy { it.key }.joinToString(",\n") {
+            "\"${it.key}\": ${it.value},".prependIndent("  ")
+        } + "\n}"
     }
 
     companion object {
@@ -69,6 +73,10 @@ class ArrayNode private constructor(private val list: MutableList<RefNode>): Ref
         return list.hashCode()
     }
 
+    override fun toString(): String {
+        return "[\n" + list.joinToString(",\n") { "$it".prependIndent("  ") } + "\n]"
+    }
+
     companion object {
         fun build(init: ArrayNodeBuilder.() -> Unit): ArrayNode {
             val builder = ArrayNodeBuilder()
@@ -78,7 +86,17 @@ class ArrayNode private constructor(private val list: MutableList<RefNode>): Ref
     }
 }
 
-data class LeafNode(val value: Any): RefNode()
+data class LeafNode(val value: Any): RefNode() {
+    override fun toString(): String {
+        return if(value is String) "\"$value\"" else value.toString()
+    }
+}
+
+object NullNode: RefNode() {
+    override fun toString(): String {
+        return "null"
+    }
+}
 
 @DslMarker
 annotation class DslNodeMarker
@@ -97,20 +115,28 @@ sealed class BuilderNode {
         return builder.build()
     }
 
-    fun leaf(value: Any): LeafNode {
-        return LeafNode(value)
-    }
+    val Any.leaf: LeafNode get() = LeafNode(this@leaf)
 
     abstract fun build(): RefNode
 }
 
-class ObjectNodeBuilder: BuilderNode() {
+/**
+ * Syntax:
+ * ```
+ * ObjectNode.build {
+ *     "key" *= value
+ *     "key" *= array {
+ *         ...
+ *     }
+ *     "key" *= obj {
+ *         ...
+ *     }
+ *     "key" *= someNode
+ * }
+ * ```
+ */
+class ObjectNodeBuilder internal constructor(): BuilderNode() {
     private val values = mutableMapOf<String, RefNode>()
-
-
-    operator fun String.timesAssign(node: BuilderNode) {
-        values[this@timesAssign] = node.build()
-    }
 
     operator fun String.timesAssign(node: RefNode) {
         values[this@timesAssign] = node
@@ -118,6 +144,14 @@ class ObjectNodeBuilder: BuilderNode() {
 
     operator fun String.timesAssign(value: Any) {
         values[this@timesAssign] = LeafNode(value)
+    }
+
+    fun add(key: String, node: RefNode) {
+        values[key] = node
+    }
+
+    fun add(key: String, value: Any) {
+        values[key] = LeafNode(value)
     }
 
     override fun build(): ObjectNode {
@@ -129,19 +163,39 @@ class ObjectNodeBuilder: BuilderNode() {
     }
 }
 
-class ArrayNodeBuilder: BuilderNode() {
+/**
+ * Syntax:
+ * ```
+ * ArrayNode.build {
+ *     n+ value
+ *     n+ array {
+ *         ...
+ *     }
+ *     n+ obj {
+ *         ...
+ *     }
+ *     n+ someNode
+ * }
+ * ```
+ */
+class ArrayNodeBuilder internal constructor(): BuilderNode() {
     private val values = mutableListOf<RefNode>()
+    val n: ArrayNodeBuilder = this
 
-    operator fun BuilderNode.unaryPlus() {
-        this@ArrayNodeBuilder.values.add(this@unaryPlus.build())
+    operator fun plus(value: Any) {
+        values.add(LeafNode(value))
     }
 
-    operator fun RefNode.unaryPlus() {
-        values.add(this@unaryPlus)
+    operator fun plus(node: RefNode) {
+        values.add(node)
     }
 
-    operator fun Any.unaryPlus() {
-        values.add(LeafNode(this@unaryPlus))
+    fun add(value: Any) {
+        values.add(LeafNode(value))
+    }
+
+    fun add(node: RefNode) {
+        values.add(node)
     }
 
     override fun build(): ArrayNode {

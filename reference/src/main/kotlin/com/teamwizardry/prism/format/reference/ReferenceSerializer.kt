@@ -2,10 +2,12 @@ package com.teamwizardry.prism.format.reference
 
 import com.teamwizardry.mirror.type.TypeMirror
 import com.teamwizardry.prism.DeserializationException
-import com.teamwizardry.prism.PrismException
+import com.teamwizardry.prism.Prism
 import com.teamwizardry.prism.SerializationException
 import com.teamwizardry.prism.Serializer
 import com.teamwizardry.prism.format.reference.format.RefNode
+
+typealias ReferencePrism<T> = Prism<ReferenceSerializer<T>>
 
 abstract class ReferenceSerializer<T: Any>: Serializer<T> {
     constructor(type: TypeMirror): super(type)
