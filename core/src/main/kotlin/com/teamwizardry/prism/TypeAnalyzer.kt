@@ -1,6 +1,7 @@
 package com.teamwizardry.prism
 
 import com.teamwizardry.mirror.type.ConcreteTypeMirror
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Type analyzers are the backend for many serializers, providing a format-agnostic way to implement the complex
@@ -11,14 +12,29 @@ import com.teamwizardry.mirror.type.ConcreteTypeMirror
  * decisions such as whether a new instance of the object is needed, and then if so what constructor to use. Some
  * serializers will change how they set data based on that data, such as not instantiating new objects if only a
  *
- * Type analyzers each have internal buffers to store data before serializing or deserializing. Among the simplest
- * buffer would be for a List serializer, which would have an internal list where elements that need to be serialized
- * and elements that have just been deserialized are stored temporarily. Doing it this way means the analyzer has
- * access to all the data when it comes time to deserialize, allowing for much more complex deserialization strategies.
+ * Type analyzers can have multiple state instances, each of which has internal buffers to store data before
+ * serializing or deserializing. Among the simplest buffer would be for a List serializer, which would have an internal
+ * list where elements that need to be serialized and elements that have just been deserialized are stored temporarily.
+ * Doing it this way means the analyzer has access to all the data when it comes time to deserialize, allowing for much
+ * more complex deserialization strategies.
  *
  * Because of their internal buffers, type analyzers are not thread safe.
  */
-abstract class TypeAnalyzer<T: Any, S: Serializer<*>>(val prism: Prism<S>, val type: ConcreteTypeMirror) {
+abstract class TypeAnalyzer<T: TypeAnalysis<*>, S: Serializer<*>>(val prism: Prism<S>, val type: ConcreteTypeMirror) {
+    protected abstract fun createState(): T
+
+    private val statePool = ConcurrentLinkedQueue<T>()
+
+    fun releaseState(state: T) {
+        statePool.add(state)
+    }
+
+    fun getState(): T {
+        return statePool.poll() ?: createState()
+    }
+}
+
+abstract class TypeAnalysis<T: Any> {
     /**
      * Reset this analyzer's internal buffer
      */

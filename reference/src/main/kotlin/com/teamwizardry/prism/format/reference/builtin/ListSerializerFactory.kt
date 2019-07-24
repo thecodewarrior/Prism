@@ -21,30 +21,35 @@ open class ListSerializerFactory(prism: ReferencePrism<*>): ReferenceSerializerF
 
         @Suppress("UNCHECKED_CAST")
         override fun deserialize(node: RefNode, existing: MutableList<Any?>?): MutableList<Any?> {
-            analyzer.clear()
+            val state = analyzer.getState()
+            state.clear()
             node as? ArrayNode ?: throw DeserializationException("List serializer expects an ArrayNode")
             node.forEachIndexed { i, it ->
                 try {
-                    when (it) {
-                        NullNode -> analyzer.buffer.add(null)
+                    state.buffer.add(when (it) {
+                        NullNode -> null
                         else -> analyzer.elementSerializer.read(it, existing?.getOrNull(i))
-                    }
+                    })
                 } catch(e: Exception) {
                     throw DeserializationException("Error deserializing element $i", e)
                 }
             }
-            return analyzer.apply(existing)
+            val newValue = state.apply(existing)
+            analyzer.releaseState(state)
+            return newValue
         }
 
         override fun serialize(value: MutableList<Any?>): RefNode {
+            val state = analyzer.getState()
             val node = ArrayNode()
-            analyzer.populate(value)
-            analyzer.buffer.forEach {
+            state.populate(value)
+            state.buffer.forEach {
                 if(it == null)
                     node.add(NullNode)
                 else
                     node.add(analyzer.elementSerializer.write(it))
             }
+            analyzer.releaseState(state)
             return node
         }
     }

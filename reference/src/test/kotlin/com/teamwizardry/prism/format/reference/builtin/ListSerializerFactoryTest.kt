@@ -1,6 +1,7 @@
 package com.teamwizardry.prism.format.reference.builtin
 
 import com.teamwizardry.mirror.Mirror
+import com.teamwizardry.prism.DeserializationException
 import com.teamwizardry.prism.Prism
 import com.teamwizardry.prism.format.reference.ReferencePrism
 import com.teamwizardry.prism.format.reference.ReferenceSerializer
@@ -15,16 +16,26 @@ import org.junit.jupiter.api.assertThrows
 
 internal class ListSerializerFactoryTest: PrismTest() {
     override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
+        registerPrimitives(prism)
         prism.register(FallbackSerializer)
         prism.register(ListSerializerFactory(prism))
     }
 
+// TODO - support plain List using ArrayList as the default
+//    @Test
+//    fun getSerializer_withList_shouldReturnArrayListSerializer() {
+//        val serializer = prism[Mirror.reflect<List<String>>()].value
+//        assertEquals(ListSerializerFactory.ListSerializer::class.java, serializer.javaClass)
+//        serializer as ListSerializerFactory.ListSerializer
+//        assertSame(Mirror.reflect<List<String>>(), serializer.type)
+//    }
+
     @Test
-    fun getSerializer_withList_shouldReturnListSerializer() {
-        val serializer = prism[Mirror.reflect<List<String>>()].value
+    fun getSerializer_withArrayList_shouldReturnArrayListSerializer() {
+        val serializer = prism[Mirror.reflect<ArrayList<String>>()].value
         assertEquals(ListSerializerFactory.ListSerializer::class.java, serializer.javaClass)
         serializer as ListSerializerFactory.ListSerializer
-        assertSame(Mirror.reflect<List<String>>(), serializer.type)
+        assertSame(Mirror.reflect<ArrayList<String>>(), serializer.type)
     }
 
     @Test
@@ -77,7 +88,7 @@ internal class ListSerializerFactoryTest: PrismTest() {
 
     @Test
     fun deserialize_ArrayList_withWrongNodeType_shouldThrow() {
-        assertThrows<IllegalArgumentException> {
+        assertThrows<DeserializationException> {
             prism[Mirror.reflect<ArrayList<String?>>()].value.read(LeafNode("whoops!"), null)
         }
     }
