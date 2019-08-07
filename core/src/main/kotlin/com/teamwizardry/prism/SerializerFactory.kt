@@ -8,6 +8,6 @@ import com.teamwizardry.mirror.type.TypeMirror
  * one with the most [specific][TypeMirror.specificity] pattern. In the case of equal specificity it chooses the last
  * one registered, in order to support overriding.
  */
-abstract class SerializerFactory<T: Serializer<*>>(val prism: Prism<T>, val pattern: TypeMirror) {
+abstract class SerializerFactory<T: Serializer<*>>(val prism: Prism<T>, val pattern: TypeMirror, val predicate: ((TypeMirror) -> Boolean)? = null) {
     abstract fun create(mirror: TypeMirror): T
 }

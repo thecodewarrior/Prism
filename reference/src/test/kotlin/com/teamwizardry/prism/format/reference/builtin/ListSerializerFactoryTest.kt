@@ -17,7 +17,7 @@ import org.junit.jupiter.api.assertThrows
 internal class ListSerializerFactoryTest: PrismTest() {
     override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
         registerPrimitives(prism)
-        prism.register(FallbackSerializer)
+        prism.register(FallbackSerializerFactory(prism))
         prism.register(ListSerializerFactory(prism))
     }
 
@@ -34,7 +34,6 @@ internal class ListSerializerFactoryTest: PrismTest() {
     fun getSerializer_withArrayList_shouldReturnArrayListSerializer() {
         val serializer = prism[Mirror.reflect<ArrayList<String>>()].value
         assertEquals(ListSerializerFactory.ListSerializer::class.java, serializer.javaClass)
-        serializer as ListSerializerFactory.ListSerializer
         assertSame(Mirror.reflect<ArrayList<String>>(), serializer.type)
     }
 

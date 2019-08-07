@@ -8,18 +8,17 @@ import com.teamwizardry.prism.format.reference.ReferenceSerializer
 import com.teamwizardry.prism.format.reference.format.LeafNode
 import com.teamwizardry.prism.format.reference.testsupport.PrismTest
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-internal class FallbackSerializerTest: PrismTest() {
+internal class FallbackSerializerFactoryTest: PrismTest() {
     override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
-        prism.register(FallbackSerializer)
+        prism.register(FallbackSerializerFactory(prism))
     }
 
     @Test
     fun getSerializer_withObject_shouldReturnFallback() {
-        assertSame(FallbackSerializer, prism[Mirror.types.any].value)
+        assertEquals(FallbackSerializerFactory.FallbackSerializer::class.java, prism[Mirror.types.any].value.javaClass)
     }
 
     @Test

@@ -33,7 +33,7 @@ tasks.withType<KotlinCompile> {
 // end common
 
 dependencies {
-    compile("com.github.TeamWizardry", "Mirror", "-SNAPSHOT")
+    compile("com.github.TeamWizardry", "Mirror", "-SNAPSHOT") { isChanging = true }
 }
 
 tasks.withType<DokkaTask> {

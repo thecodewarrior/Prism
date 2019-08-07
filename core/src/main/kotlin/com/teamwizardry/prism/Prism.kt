@@ -40,11 +40,14 @@ class Prism<T: Serializer<*>> {
         }
 
         val factory = _factories.fold<SerializerFactory<T>, SerializerFactory<T>?>(null) { acc, factory ->
-            if (
-                factory.pattern.isAssignableFrom(mirror) &&
-                (acc == null || acc.pattern.specificity <= factory.pattern.specificity)
-            ) {
-                factory
+            val applicable = factory.pattern.isAssignableFrom(mirror) && factory.predicate?.invoke(mirror) != false
+            if (applicable) {
+                val moreSpecific = acc == null || acc.pattern.specificity <= factory.pattern.specificity ||
+                    (acc.predicate == null && factory.predicate != null && acc.pattern.specificity.compareTo(factory.pattern.specificity) == 0)
+                if(moreSpecific)
+                    factory
+                else
+                    acc
             } else {
                 acc
             }

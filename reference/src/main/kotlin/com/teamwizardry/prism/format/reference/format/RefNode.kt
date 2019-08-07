@@ -37,6 +37,21 @@ class ObjectNode private constructor(private val map: MutableMap<String, RefNode
     }
 
     companion object {
+        /**
+         * Syntax:
+         * ```
+         * ObjectNode.build {
+         *     "key" *= value
+         *     "key" *= array {
+         *         ...
+         *     }
+         *     "key" *= obj {
+         *         ...
+         *     }
+         *     "key" *= someNode
+         * }
+         * ```
+         */
         fun build(init: ObjectNodeBuilder.() -> Unit): ObjectNode {
             val builder = ObjectNodeBuilder()
             builder.init()
@@ -78,6 +93,21 @@ class ArrayNode private constructor(private val list: MutableList<RefNode>): Ref
     }
 
     companion object {
+        /**
+         * Syntax:
+         * ```
+         * ArrayNode.build {
+         *     n+ value
+         *     n+ array {
+         *         ...
+         *     }
+         *     n+ obj {
+         *         ...
+         *     }
+         *     n+ someNode
+         * }
+         * ```
+         */
         fun build(init: ArrayNodeBuilder.() -> Unit): ArrayNode {
             val builder = ArrayNodeBuilder()
             builder.init()
