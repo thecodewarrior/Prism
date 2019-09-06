@@ -4,8 +4,8 @@ import com.teamwizardry.mirror.Mirror
 import com.teamwizardry.mirror.type.ClassMirror
 import com.teamwizardry.mirror.type.TypeMirror
 import com.teamwizardry.prism.DeserializationException
-import com.teamwizardry.prism.annotation.Refract
-import com.teamwizardry.prism.base.analysis.ObjectAnalyzer
+import com.teamwizardry.prism.annotation.RefractClass
+import com.teamwizardry.prism.base.analysis.auto.ObjectAnalyzer
 import com.teamwizardry.prism.format.reference.ReferencePrism
 import com.teamwizardry.prism.format.reference.ReferenceSerializer
 import com.teamwizardry.prism.format.reference.ReferenceSerializerFactory
@@ -14,7 +14,7 @@ import com.teamwizardry.prism.format.reference.format.ObjectNode
 import com.teamwizardry.prism.format.reference.format.RefNode
 
 open class ObjectSerializerFactory(prism: ReferencePrism<*>): ReferenceSerializerFactory(prism, Mirror.reflect<Any>(), {
-    (it as ClassMirror).annotations.any { it is Refract }
+    (it as ClassMirror).annotations.any { it is RefractClass }
 }) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
         return ObjectSerializer(prism, mirror)
@@ -43,7 +43,7 @@ open class ObjectSerializerFactory(prism: ReferencePrism<*>): ReferenceSerialize
             state.populate(value)
             state.values.forEach { (property, propertyValue) ->
                 val v = propertyValue.value
-                if(propertyValue.present) {
+                if(propertyValue.isPresent) {
                     if(v == null)
                         node[property.name] = NullNode
                     else

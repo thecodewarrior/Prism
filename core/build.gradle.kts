@@ -1,7 +1,7 @@
+
 import groovy.lang.Closure
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.concurrent.Callable
 
 // begin common
 plugins {
@@ -34,6 +34,11 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
     compile("com.github.TeamWizardry", "Mirror", "-SNAPSHOT") { isChanging = true }
+    compile(kotlin("reflect"))
+    compile(kotlin("stdlib-jdk8"))
+    compile("org.apache.logging.log4j:log4j-api:2.12.0")
+    compile("org.apache.logging.log4j:log4j-core:2.12.0")
+    compile("org.apache.logging.log4j:log4j-slf4j-impl:2.12.0")
 }
 
 tasks.withType<DokkaTask> {

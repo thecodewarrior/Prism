@@ -3,6 +3,7 @@ package com.teamwizardry.prism.format.reference.builtin
 import com.teamwizardry.mirror.Mirror
 import com.teamwizardry.prism.Prism
 import com.teamwizardry.prism.annotation.Refract
+import com.teamwizardry.prism.annotation.RefractClass
 import com.teamwizardry.prism.format.reference.ReferencePrism
 import com.teamwizardry.prism.format.reference.ReferenceSerializer
 import com.teamwizardry.prism.format.reference.format.ObjectNode
@@ -19,7 +20,7 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
     }
 
     class NonAnnotatedClass
-    @Refract
+    @RefractClass
     class AnnotatedClass
 
     @Test
@@ -35,7 +36,7 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
         assertSame(Mirror.reflect<AnnotatedClass>(), serializer.type)
     }
 
-    @Refract
+    @RefractClass
     class EmptyObject
 
     @Test
@@ -45,7 +46,7 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
         assertEquals(ObjectNode(), node)
     }
 
-    @Refract
+    @RefractClass
     class NoRefractingFields {
         val nonRefracting: Int = 0
     }
@@ -57,7 +58,7 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
         assertEquals(ObjectNode(), node)
     }
 
-    @Refract
+    @RefractClass
     data class RefractingFields(@Refract var refracting: Int)
 
     @Test

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * process of extracting serializable data from an object and later integrating that data back in, either by modifying
  * an existing object or creating a new one.
  *
- * A type analyzer takes analyzes types and objects to determine the best way to get and set data. This often includes
+ * A type analyzer analyzes types and objects to determine the best way to get and set data. This often includes
  * decisions such as whether a new instance of the object is needed, and then if so what constructor to use. Some
  * serializers will change how they set data based on that data, such as not instantiating new objects if only a
  *
@@ -18,22 +18,36 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * Doing it this way means the analyzer has access to all the data when it comes time to deserialize, allowing for much
  * more complex deserialization strategies.
  *
- * Because of their internal buffers, type analyzers are not thread safe.
+ * Well-built analyzers should be thread safe, however the [TypeAnalysis] objects they return may not be.
  */
 abstract class TypeAnalyzer<T: TypeAnalysis<*>, S: Serializer<*>>(val prism: Prism<S>, val type: ConcreteTypeMirror) {
     protected abstract fun createState(): T
 
     private val statePool = ConcurrentLinkedQueue<T>()
 
+    /**
+     * Adds a [TypeAnalysis] state object back to the pool to be returned by a later call to [getState].
+     */
     fun releaseState(state: T) {
+        state.clear()
         statePool.add(state)
     }
 
+    /**
+     * Gets a pooled [TypeAnalysis] state object. The returned object should be passed to [releaseState] when the
+     * (de)serialization operation has been completed.
+     */
     fun getState(): T {
-        return statePool.poll() ?: createState()
+        return (statePool.poll() ?: createState()).also { it.clear() }
     }
 }
 
+/**
+ * TypeAnalysis objects are used to allow multi-threaded and recursive use of [type analyzers][TypeAnalyzer]. Since the
+ * type analyzer might be used recursively, the analyzer itself can't store the intermediate state for a
+ * (de)serialization operation. Because of this, type analyzers provide pooled type analysis objects, each of which
+ * stores the intermediate state required for their operation.
+ */
 abstract class TypeAnalysis<T: Any> {
     /**
      * Reset this analyzer's internal buffer

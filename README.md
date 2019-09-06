@@ -1,8 +1,7 @@
 
 <h1 align="center">
   <br>
-    <img src="https://raw.github.com/TeamWizardry/Prism/master/logo.svg?sanitize=true" title="Prism logo by Tris Astral" 
-    width="200" height="200">
+    <img src="https://raw.github.com/TeamWizardry/Prism/master/logo.svg?sanitize=true" title="Prism logo by Tris Astral" width="200" height="200">
   <br>
   Prism
   <br>
