@@ -1,5 +1,5 @@
 
 allprojects {
-    group = "com.teamwizardry.prism"
+    group = "dev.thecodewarrior.prism"
     version = "0.0.1"
 }
