@@ -28,6 +28,7 @@ object ByteSerializer: DirectSerializer<Byte>()
 object CharSerializer: DirectSerializer<Char>()
 object DoubleSerializer: DirectSerializer<Double>()
 object FloatSerializer: DirectSerializer<Float>()
+object BooleanSerializer: DirectSerializer<Boolean>()
 
 object PrimitiveLongSerializer: DirectSerializer<Long>(Mirror.types.long)
 object PrimitiveIntSerializer: DirectSerializer<Int>(Mirror.types.int)
@@ -36,4 +37,5 @@ object PrimitiveByteSerializer: DirectSerializer<Byte>(Mirror.types.byte)
 object PrimitiveCharSerializer: DirectSerializer<Char>(Mirror.types.char)
 object PrimitiveDoubleSerializer: DirectSerializer<Double>(Mirror.types.double)
 object PrimitiveFloatSerializer: DirectSerializer<Float>(Mirror.types.float)
+object PrimitiveBooleanSerializer: DirectSerializer<Boolean>(Mirror.types.boolean)
 

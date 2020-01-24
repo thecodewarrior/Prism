@@ -1,12 +1,14 @@
 package dev.thecodewarrior.prism.format.reference.testsupport
 
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
+import dev.thecodewarrior.prism.format.reference.builtin.BooleanSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.ByteSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.CharSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.DoubleSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.FloatSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.IntSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.LongSerializer
+import dev.thecodewarrior.prism.format.reference.builtin.PrimitiveBooleanSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.PrimitiveByteSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.PrimitiveCharSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.PrimitiveDoubleSerializer
@@ -32,6 +34,7 @@ abstract class PrismTest {
         prism.register(CharSerializer)
         prism.register(DoubleSerializer)
         prism.register(FloatSerializer)
+        prism.register(BooleanSerializer)
         prism.register(PrimitiveLongSerializer)
         prism.register(PrimitiveIntSerializer)
         prism.register(PrimitiveShortSerializer)
@@ -39,6 +42,7 @@ abstract class PrismTest {
         prism.register(PrimitiveCharSerializer)
         prism.register(PrimitiveDoubleSerializer)
         prism.register(PrimitiveFloatSerializer)
+        prism.register(PrimitiveBooleanSerializer)
     }
 
     abstract fun createPrism(): ReferencePrism<*>

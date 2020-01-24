@@ -1,5 +1,6 @@
 package dev.thecodewarrior.prism.utils
 
+import dev.thecodewarrior.mirror.member.ConstructorMirror
 import dev.thecodewarrior.mirror.member.FieldMirror
 import dev.thecodewarrior.mirror.member.MethodMirror
 import dev.thecodewarrior.mirror.type.ClassMirror
@@ -22,6 +23,11 @@ inline fun <reified T> FieldMirror.annotation(): T? {
 }
 
 inline fun <reified T> MethodMirror.annotation(): T? {
+    annotations.forEach { if(it is T) return it }
+    return null
+}
+
+inline fun <reified T> ConstructorMirror.annotation(): T? {
     annotations.forEach { if(it is T) return it }
     return null
 }

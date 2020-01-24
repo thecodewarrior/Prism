@@ -1,66 +1,40 @@
 package dev.thecodewarrior.prism.base.analysis.auto
 
-import dev.thecodewarrior.mirror.member.FieldMirror
-import dev.thecodewarrior.mirror.member.MethodMirror
 import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.TypeAnalysis
 import dev.thecodewarrior.prism.TypeAnalyzer
-import dev.thecodewarrior.prism.annotation.Refract
-import dev.thecodewarrior.prism.annotation.RefractGetter
-import dev.thecodewarrior.prism.annotation.RefractSetter
-import dev.thecodewarrior.prism.internal.identitySetOf
 import dev.thecodewarrior.prism.internal.unmodifiableView
-import dev.thecodewarrior.prism.utils.annotation
 
 class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): TypeAnalyzer<ObjectAnalyzer<T, S>.ObjectAnalysis, S>(prism, type)  {
-    val properties: List<ObjectProperty>
-    val nameMap: Map<String, ObjectProperty>
+    val properties: List<ObjectProperty<S>>
+    val nameMap: Map<String, ObjectProperty<S>>
+    val instantiators: List<ObjectInstantiator<S>>
 
     init {
-        val _properties: List<ObjectProperty>
-        val _nameMap: Map<String, ObjectProperty>
-
-        run { // generate properties list
-            // store multiple values so we can detect duplicates
-            val properties = mutableMapOf<String, MutableSet<ObjectProperty>>()
-
-            type.allFields.forEach { field ->
-                val annot = field.annotation<Refract>() ?: return@forEach
-                val name = if (annot.value.isBlank()) field.name else annot.value
-                val property = FieldProperty(field)
-                properties.getOrPut(name) { identitySetOf() }.add(property)
-            }
-
-            // store multiple values so we can detect duplicates
-            val getters = mutableMapOf<String, MutableSet<MethodMirror>>()
-            val setters = mutableMapOf<String, MutableSet<MethodMirror>>()
-            type.allMethods.forEach { method ->
-                method.annotation<RefractGetter>()?.also { annot ->
-                    getters.getOrPut(annot.value) { identitySetOf() }.add(method)
-                }
-                method.annotation<RefractSetter>()?.also { annot ->
-                    setters.getOrPut(annot.value) { identitySetOf() }.add(method)
-                }
-            }
-
-            _properties = properties.values.map { it.first() }.unmodifiableView()
-            _nameMap = properties.entries.associate { (k, v) -> k to v.first() }.unmodifiableView()
-        }
-
-        this.properties = _properties
-        this.nameMap = _nameMap
+        val propertyScanner = PropertyScanner(prism, type)
+        properties = propertyScanner.properties.unmodifiableView()
+        nameMap = properties.associateBy { it.name }.unmodifiableView()
+        val instantiatorScanner = InstantiatorScanner(prism, type, properties)
+        instantiators = instantiatorScanner.instantiators.unmodifiableView()
     }
 
     override fun createState(): ObjectAnalysis = ObjectAnalysis()
 
-    fun applyValues(target: Any?, values: Map<ObjectProperty, ValueContainer>): Any {
+    fun applyValues(target: Any?, values: Map<ObjectProperty<S>, ValueContainer>): Any {
         val needsInstance = target == null || values.any { (property, value) ->
             value.isPresent && property.isImmutable
         }
         if(needsInstance) {
-            TODO()
+            val instantiator = instantiators.find { it.properties.all { values[it]?.isPresent == true } } ?: TODO() // todo: error type
+            val instance = instantiator.createInstance(instantiator.properties.map { values[it]!!.value })
+            values.forEach { (property, value) ->
+                if(value.isPresent && property !in instantiator.propertySet) {
+                    property.setValue(instance, value.value)
+                }
+            }
+            return instance
         } else {
             target!!
             //todo: missing keys == error?
@@ -83,14 +57,14 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             }
         }
 
-        fun setValue(property: ObjectProperty, value: Any?) {
+        fun setValue(property: ObjectProperty<S>, value: Any?) {
             values[property]?.also {
                 it.isPresent = true
                 it.value = value
             }
         }
 
-        fun getValue(property: ObjectProperty): Any? {
+        fun getValue(property: ObjectProperty<S>): Any? {
             return values[property]?.value
         }
 
@@ -110,27 +84,6 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
     class ValueContainer {
         var isPresent: Boolean = false
         var value: Any? = null
-    }
-
-    abstract inner class ObjectProperty(val name: String) {
-        abstract val isImmutable: Boolean
-        abstract val serializer: S
-        abstract fun getValue(target: Any): Any?
-        abstract fun setValue(target: Any, value: Any?)
-    }
-
-    inner class FieldProperty(val mirror: FieldMirror): ObjectProperty(mirror.name) {
-        override val isImmutable: Boolean
-            get() = mirror.isFinal
-        override val serializer: S by prism[mirror.type]
-
-        override fun getValue(target: Any): Any? {
-            return mirror.get(target)
-        }
-
-        override fun setValue(target: Any, value: Any?) {
-            mirror.set(target, value)
-        }
     }
 
     companion object {

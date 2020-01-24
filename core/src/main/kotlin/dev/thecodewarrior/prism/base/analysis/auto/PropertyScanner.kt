@@ -1,116 +1,50 @@
 package dev.thecodewarrior.prism.base.analysis.auto
 
-import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.mirror.member.FieldMirror
 import dev.thecodewarrior.mirror.member.MethodMirror
 import dev.thecodewarrior.mirror.type.ClassMirror
+import dev.thecodewarrior.prism.InvalidTypeException
+import dev.thecodewarrior.prism.Prism
+import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractGetter
 import dev.thecodewarrior.prism.annotation.RefractSetter
 import dev.thecodewarrior.prism.internal.identitySetOf
-import dev.thecodewarrior.prism.utils.ProblemTracker
 import dev.thecodewarrior.prism.utils.allDeclaredMemberProperties
 import dev.thecodewarrior.prism.utils.annotation
-import dev.thecodewarrior.prism.utils.declaringClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
 
-class PropertyScanner(val problems: ProblemTracker, val type: ClassMirror) {
-    // store multiple values so we can detect duplicates
-    val kotlin = mutableMapOf<String, MutableSet<KProperty<*>>>()
-    val fields = mutableMapOf<String, MutableSet<FieldMirror>>()
+class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirror) {
+    val candidates = mutableMapOf<String, PropertyCandidate>()
+    val properties: List<ObjectProperty<S>>
 
-    val getters = mutableMapOf<String, MutableSet<MethodMirror>>()
-    val setters = mutableMapOf<String, MutableSet<MethodMirror>>()
-
-    val candidates = mutableMapOf<String, PropertyCandidates>()
-
-    class PropertyCandidates(val name: String) {
+    inner class PropertyCandidate(val name: String) {
         val kotlin: MutableSet<KProperty<*>> = identitySetOf()
         val fields: MutableSet<FieldMirror> = identitySetOf()
         val getters: MutableSet<MethodMirror> = identitySetOf()
         val setters: MutableSet<MethodMirror> = identitySetOf()
 
-        fun detectErrors(problems: ProblemTracker) {
-            var i = 1
-            val kotlin = this.kotlin.associateWith { i++ }
-            val fields = this.fields.associateWith { i++ }
-            val getters = this.getters.associateWith { i++ }
-            val setters = this.setters.associateWith { i++ }
+        fun resolve(): ObjectProperty<S> {
 
-            val kotlinOutline = kotlin.map { (property, index) ->
-                "\n$index: $property in class ${property.declaringClass?.let { Mirror.reflect(it).toString() } ?: "?"}"
-            }.joinToString("")
-            val fieldsOutline = fields.map { (field, index) ->
-                "\n$index: $field in class ${field.declaringClass}"
-            }.joinToString("")
-            val gettersOutline = getters.map { (getter, index) ->
-                "\n$index: $getter in class ${getter.declaringClass}"
-            }.joinToString("")
-            val settersOutline = setters.map { (setter, index) ->
-                "\n$index: $setter in class ${setter.declaringClass}"
-            }.joinToString("")
+            val count = kotlin.size + fields.size + getters.size * 0.5 + setters.size * 0.5
 
-            val outline = """
-                |[Property] Errors occurred analyzing property `$name`
-                |    Discovered ${kotlin.size} Kotlin properties:${kotlinOutline.prependIndent("|        ")}
-                |    Discovered ${fields.size} fields:${fieldsOutline.prependIndent("|        ")}
-                |    Discovered ${getters.size} getters:${gettersOutline.prependIndent("|        ")}
-                |    Discovered ${setters.size} setters:${settersOutline.prependIndent("|        ")}
-                |    [Errors]:
-            """.trimMargin()
+            if(count != 1.0)
+                throw InvalidTypeException("multiple properties or fields or getters for $name")
 
-            val errors = mutableListOf<String>()
-            if(kotlin.size > 1) {
-                errors.add("[Error] Multiple kotlin properties were found with the same name.")
-                if(kotlin.keys.any { it.findAnnotation<Refract>()?.value?.isBlank() == false })
-                    errors.add("[Tip] @Refract annotations with custom names may be causing the conflict")
-                if(kotlin.keys.mapNotNullTo(mutableSetOf()) { it.declaringClass }.size > 1)
-                    errors.add("[Tip] A property with the same name from a superclass may be causing the conflict")
-            }
-            if(fields.size > 1) {
-                errors.add("Multiple fields with were found with the same name.")
-            }
-            if(getters.size > 1) {
-                errors.add("Multiple getters with the same name")
-            }
-            if(setters.size > 1) {
-                errors.add("Multiple setters with the same name")
-            }
+            if(kotlin.isNotEmpty())
+                throw error("kotlin properties not implemented yet")
 
-            if(kotlin.isNotEmpty() && fields.isNotEmpty()) {
-                errors.add("")
-            }
-            if((kotlin.isNotEmpty() || fields.isNotEmpty()) && getters.isNotEmpty()) {
-                errors.add("Conflicting fields and properties")
-            }
-            if((kotlin.isNotEmpty() || fields.isNotEmpty()) && getters.isNotEmpty()) {
-                errors.add("Conflicting fields and properties")
-            }
+            if(fields.isNotEmpty())
+                return FieldProperty(prism, name, fields.first())
 
-
-
-//            getters.forEach { (name, values) ->
-//                if(name in fields) {
-//                    problems.error("Field property conflicts with getters")
-//                }
-//            }
-//            setters.forEach { (name, values) ->
-//                if(name in fields) {
-//                    problems.error("Field property conflicts with setters")
-//                }
-//            }
-//
-//            (setters.keys - getters.keys).forEach { name ->
-//                problems.error("Setter with no getter. Property ignored")
-//            }
-//            (getters.keys + fields.keys).forEach { name ->
-//                problems.error("")
-//            }
+            if(getters.isEmpty() || setters.isNotEmpty())
+                throw InvalidTypeException("setter with no getter")
+            return AccessorProperty(prism, name, getters.first(), setters.firstOrNull())
         }
     }
 
-    private fun getCandidate(name: String) = candidates.getOrPut(name) { PropertyCandidates(name) }
+    private fun getCandidate(name: String) = candidates.getOrPut(name) { PropertyCandidate(name) }
 
     private fun populateMembers() {
         type.allFields.forEach { field ->
@@ -137,19 +71,21 @@ class PropertyScanner(val problems: ProblemTracker, val type: ClassMirror) {
 
     init {
         populateMembers()
-        candidates.forEach { it.value.detectErrors(problems) }
+        properties = candidates.map { it.value.resolve() }
     }
 }
 
-abstract class ObjectProperty(val name: String) {
+abstract class ObjectProperty<S: Serializer<*>>(val name: String) {
     abstract val isImmutable: Boolean
+    abstract val serializer: S
     abstract fun getValue(target: Any): Any?
     abstract fun setValue(target: Any, value: Any?)
 }
 
-class FieldProperty(val mirror: FieldMirror): ObjectProperty(mirror.name) {
+class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror: FieldMirror): ObjectProperty<S>(name) {
     override val isImmutable: Boolean
         get() = mirror.isFinal
+    override val serializer: S by prism[mirror.type]
 
     override fun getValue(target: Any): Any? {
         return mirror.get(target)
@@ -160,15 +96,16 @@ class FieldProperty(val mirror: FieldMirror): ObjectProperty(mirror.name) {
     }
 }
 
-class AccessorProperty(val mirror: FieldMirror): ObjectProperty(mirror.name) {
+class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val getter: MethodMirror, val setter: MethodMirror?): ObjectProperty<S>(name) {
     override val isImmutable: Boolean
-        get() = mirror.isFinal
+        get() = setter != null
+    override val serializer: S by prism[getter.returnType]
 
     override fun getValue(target: Any): Any? {
-        return mirror.get(target)
+        return getter.call(target)
     }
 
     override fun setValue(target: Any, value: Any?) {
-        mirror.set(target, value)
+        setter?.call(target, value) as Any?
     }
 }

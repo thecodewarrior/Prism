@@ -4,6 +4,7 @@ import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractClass
+import dev.thecodewarrior.prism.annotation.RefractConstructor
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.format.ObjectNode
@@ -37,13 +38,36 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
     }
 
     @RefractClass
-    class EmptyObject
+    class EmptyObject @RefractConstructor constructor() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is EmptyObject) return false
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return javaClass.hashCode()
+        }
+    }
 
     @Test
     fun serialize_withEmptyClass_shouldReturnEmptyObject() {
         val theObject = EmptyObject()
         val node = prism[Mirror.reflect<EmptyObject>()].value.write(theObject)
         assertEquals(ObjectNode(), node)
+    }
+
+    @Test
+    fun deserialize_withEmptyClass_andExistingObject_shouldReturnSameInstance() {
+        val theObject = EmptyObject()
+        val node = prism[Mirror.reflect<EmptyObject>()].value.read(ObjectNode(), theObject)
+        assertSame(theObject, node)
+    }
+
+    @Test
+    fun deserialize_withEmptyClass_andNoExistingObject_shouldReturnNewInstance() {
+        val theObject = prism[Mirror.reflect<EmptyObject>()].value.read(ObjectNode(), null)
+        assertEquals(EmptyObject(), theObject)
     }
 
     @RefractClass
@@ -59,23 +83,67 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
     }
 
     @RefractClass
-    data class RefractingFields(@Refract var refracting: Int)
+    data class RefractingFields(@field:Refract var refracting: Int)
 
     @Test
     fun serialize_withRefractingFields_shouldReturnObjectWithKeysForProperties() {
-        val theObject = RefractingFields(0)
+        val theObject = RefractingFields(1)
         val node = prism[Mirror.reflect<RefractingFields>()].value.write(theObject)
         assertEquals(ObjectNode.build {
-            "refracting" *= 0
+            "refracting" *= 1
         }, node)
     }
 
     @Test
-    fun deserialize_withRefractingFields_andExistingObject_shouldReturnEmptyObject() {
+    fun deserialize_withRefractingFields_andExistingObject_shouldReturnModifiedObject() {
         val node = ObjectNode.build {
             "refracting" *= 5
         }
-        val theObject = prism[Mirror.reflect<RefractingFields>()].value.read(node, RefractingFields(0))
+        val theObject = RefractingFields(0)
+        val theReturnedObject = prism[Mirror.reflect<RefractingFields>()].value.read(node, theObject)
+        assertSame(theObject, theReturnedObject)
         assertEquals(RefractingFields(5), theObject)
+    }
+
+    @RefractClass
+    data class RefractingFullConstructor @RefractConstructor constructor(@field:Refract var refracting: Int)
+
+    @Test
+    fun deserialize_withRefractingFullConstructor_andNoExistingObject_shouldReturnNewInstance() {
+        val serializer = prism[Mirror.reflect<RefractingFullConstructor>()].value
+        val theObject = RefractingFullConstructor(1)
+        val node = serializer.write(theObject)
+        val theDeserializedObject = serializer.read(node, null)
+        assertEquals(theObject, theDeserializedObject)
+    }
+
+    @RefractClass
+    data class RefractingPartialConstructor(@field:Refract var refracting: Int, @field:Refract var secondRefractingField: Int) {
+        @RefractConstructor
+        constructor(refracting: Int): this(refracting, 2)
+    }
+
+    @Test
+    fun deserialize_withRefractingPartialConstructor_andNoExistingObject_shouldReturnNewInstance() {
+        val serializer = prism[Mirror.reflect<RefractingPartialConstructor>()].value
+        val theObject = RefractingPartialConstructor(1)
+        val node = serializer.write(theObject)
+        val theDeserializedObject = serializer.read(node, null)
+        assertEquals(theObject, theDeserializedObject)
+    }
+
+    @RefractClass
+    data class RefractingMultipleConstructor @RefractConstructor constructor(@field:Refract var refracting: Int, @field:Refract var usedPrimary: Boolean) {
+        @RefractConstructor
+        constructor(refracting: Int): this(refracting, false)
+    }
+
+    @Test
+    fun deserialize_withRefractingMultipleConstructor_andNoExistingObject_shouldReturnNewInstance() {
+        val serializer = prism[Mirror.reflect<RefractingMultipleConstructor>()].value
+        val theObject = RefractingMultipleConstructor(1, true)
+        val node = serializer.write(theObject)
+        val theDeserializedObject = serializer.read(node, null)
+        assertEquals(theObject, theDeserializedObject)
     }
 }
