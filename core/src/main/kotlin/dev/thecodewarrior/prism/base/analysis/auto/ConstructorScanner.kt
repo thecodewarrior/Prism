@@ -25,11 +25,19 @@ class InstantiatorScanner<S: Serializer<*>>(val prism: Prism<S>, val type: Class
                 }
                 names = parameterNames.requireNoNulls()
             }
+
             val missingNames = names.filter { it !in propertyMap }
             if(missingNames.isNotEmpty()) {
                 throw InvalidRefractSignatureException("Some constructor parameter names have no corresponding " +
                     "property: [${missingNames.joinToString(", ")}]")
             }
+
+            val mismatchedTypes = names.filterIndexed { i, name -> propertyMap.getValue(name).type != constructor.parameterTypes[i] }
+            if(mismatchedTypes.isNotEmpty()) {
+                throw InvalidRefractSignatureException("Some constructor parameters have types that aren't equal to " +
+                    "their corresponding property: [${mismatchedTypes.joinToString(", ")}]")
+            }
+
             instantiators.add(ConstructorInstantiator(prism, constructor, names.map { propertyMap.getValue(it) }, annot.priority))
         }
 

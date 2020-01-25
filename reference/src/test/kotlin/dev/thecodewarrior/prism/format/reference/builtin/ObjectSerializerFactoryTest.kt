@@ -5,6 +5,7 @@ import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractClass
 import dev.thecodewarrior.prism.annotation.RefractConstructor
+import dev.thecodewarrior.prism.base.analysis.auto.InvalidRefractSignatureException
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.format.ObjectNode
@@ -12,6 +13,7 @@ import dev.thecodewarrior.prism.format.reference.testsupport.PrismTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 internal class ObjectSerializerFactoryTest: PrismTest() {
     override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
@@ -106,44 +108,123 @@ internal class ObjectSerializerFactoryTest: PrismTest() {
     }
 
     @RefractClass
-    data class RefractingFullConstructor @RefractConstructor constructor(@field:Refract var refracting: Int)
+    data class FullConstructor @RefractConstructor constructor(@field:Refract var refracting: Int)
 
     @Test
-    fun deserialize_withRefractingFullConstructor_andNoExistingObject_shouldReturnNewInstance() {
-        val serializer = prism[Mirror.reflect<RefractingFullConstructor>()].value
-        val theObject = RefractingFullConstructor(1)
+    fun deserialize_withFullConstructor_andNoExistingObject_shouldReturnNewInstance() {
+        val serializer = prism[Mirror.reflect<FullConstructor>()].value
+        val theObject = FullConstructor(1)
         val node = serializer.write(theObject)
         val theDeserializedObject = serializer.read(node, null)
         assertEquals(theObject, theDeserializedObject)
     }
 
     @RefractClass
-    data class RefractingPartialConstructor(@field:Refract var refracting: Int, @field:Refract var secondRefractingField: Int) {
+    data class ConstructorAnnotationNames(@field:Refract var refracting: Int, var unused: Int) {
+        @RefractConstructor(["refracting"])
+        constructor(differentName: Int) : this(differentName, 1)
+    }
+
+    @Test
+    fun deserialize_withConstructorAnnotationNames_andNoExistingObject_shouldReturnNewInstance() {
+        val serializer = prism[Mirror.reflect<ConstructorAnnotationNames>()].value
+        val theObject = ConstructorAnnotationNames(1)
+        val node = serializer.write(theObject)
+        val theDeserializedObject = serializer.read(node, null)
+        assertEquals(theObject, theDeserializedObject)
+    }
+
+    @RefractClass
+    data class PartialConstructor(@field:Refract var refracting: Int, @field:Refract var secondRefractingField: Int) {
         @RefractConstructor
         constructor(refracting: Int): this(refracting, 2)
     }
 
     @Test
-    fun deserialize_withRefractingPartialConstructor_andNoExistingObject_shouldReturnNewInstance() {
-        val serializer = prism[Mirror.reflect<RefractingPartialConstructor>()].value
-        val theObject = RefractingPartialConstructor(1)
+    fun deserialize_withPartialConstructor_andNoExistingObject_shouldCallPartialConstructor() {
+        val serializer = prism[Mirror.reflect<PartialConstructor>()].value
+        val theObject = PartialConstructor(1)
         val node = serializer.write(theObject)
         val theDeserializedObject = serializer.read(node, null)
         assertEquals(theObject, theDeserializedObject)
     }
 
     @RefractClass
-    data class RefractingMultipleConstructor @RefractConstructor constructor(@field:Refract var refracting: Int, @field:Refract var usedPrimary: Boolean) {
+    data class MultipleConstructors @RefractConstructor constructor(@field:Refract var refracting: Int, @field:Refract var usedPrimary: Boolean) {
         @RefractConstructor
         constructor(refracting: Int): this(refracting, false)
     }
 
     @Test
-    fun deserialize_withRefractingMultipleConstructor_andNoExistingObject_shouldReturnNewInstance() {
-        val serializer = prism[Mirror.reflect<RefractingMultipleConstructor>()].value
-        val theObject = RefractingMultipleConstructor(1, true)
+    fun deserialize_withMultipleConstructors_andNoExistingObject_shouldCallFullConstructor() {
+        val serializer = prism[Mirror.reflect<MultipleConstructors>()].value
+        val theObject = MultipleConstructors(1, true)
         val node = serializer.write(theObject)
         val theDeserializedObject = serializer.read(node, null)
         assertEquals(theObject, theDeserializedObject)
+    }
+
+    @RefractClass
+    data class RefractingConstructor(@field:Refract var refracting: Int, @field:Refract var secondRefractingField: Int) {
+        @RefractConstructor
+        constructor(refracting: Int): this(refracting, 2)
+    }
+
+    @RefractClass
+    class MistypedConstructorParameters @RefractConstructor constructor(intField: Int, booleanField: Int) {
+        @field:Refract var intField: Int = 0
+        @field:Refract var booleanField: Boolean = false
+    }
+
+    @Test
+    fun getSerializer_withMistypedConstructorParameters_shouldThrow() {
+        val e = assertThrows<InvalidRefractSignatureException>() {
+            prism[Mirror.reflect<MistypedConstructorParameters>()].value
+        }
+        assertEquals("Some constructor parameters have types that aren't equal to their corresponding property: " +
+            "[booleanField]", e.message)
+    }
+
+    @RefractClass
+    class SubtypedConstructorParameters @RefractConstructor constructor(intField: Int, listField: ArrayList<String>) {
+        @field:Refract var intField: Int = 0
+        @field:Refract var listField: List<String>? = null
+    }
+
+    @Test
+    fun getSerializer_withSubtypedConstructorParameters_shouldThrow() {
+        val e = assertThrows<InvalidRefractSignatureException>() {
+            prism[Mirror.reflect<SubtypedConstructorParameters>()].value
+        }
+        assertEquals("Some constructor parameters have types that aren't equal to their corresponding property: " +
+            "[listField]", e.message)
+    }
+
+    @RefractClass
+    class MisnamedConstructorParameters @RefractConstructor constructor(intField: Int, oopsField: Boolean) {
+        @field:Refract var intField: Int = 0
+        @field:Refract var booleanField: Boolean = false
+    }
+
+    @Test
+    fun getSerializer_withMisnamedConstructorParameters_shouldThrow() {
+        val e = assertThrows<InvalidRefractSignatureException> {
+            prism[Mirror.reflect<MisnamedConstructorParameters>()].value
+        }
+        assertEquals("Some constructor parameter names have no corresponding property: [oopsField]", e.message)
+    }
+
+    @RefractClass
+    class MisnamedAnnotationParameters @RefractConstructor(["intField", "whoops"]) constructor(arg1: Int, arg2: Boolean) {
+        @field:Refract var intField: Int = 0
+        @field:Refract var booleanField: Boolean = false
+    }
+
+    @Test
+    fun getSerializer_withMisnamedAnnotationParameters_shouldThrow() {
+        val e = assertThrows<InvalidRefractSignatureException> {
+            prism[Mirror.reflect<MisnamedAnnotationParameters>()].value
+        }
+        assertEquals("Some constructor parameter names have no corresponding property: [whoops]", e.message)
     }
 }

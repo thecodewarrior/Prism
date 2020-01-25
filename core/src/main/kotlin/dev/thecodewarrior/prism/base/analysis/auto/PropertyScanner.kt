@@ -3,6 +3,7 @@ package dev.thecodewarrior.prism.base.analysis.auto
 import dev.thecodewarrior.mirror.member.FieldMirror
 import dev.thecodewarrior.mirror.member.MethodMirror
 import dev.thecodewarrior.mirror.type.ClassMirror
+import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.InvalidTypeException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.Serializer
@@ -76,6 +77,7 @@ class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirr
 }
 
 abstract class ObjectProperty<S: Serializer<*>>(val name: String) {
+    abstract val type: TypeMirror
     abstract val isImmutable: Boolean
     abstract val serializer: S
     abstract fun getValue(target: Any): Any?
@@ -83,6 +85,8 @@ abstract class ObjectProperty<S: Serializer<*>>(val name: String) {
 }
 
 class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror: FieldMirror): ObjectProperty<S>(name) {
+    override val type: TypeMirror get() = mirror.type
+
     override val isImmutable: Boolean
         get() = mirror.isFinal
     override val serializer: S by prism[mirror.type]
@@ -97,6 +101,8 @@ class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror:
 }
 
 class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val getter: MethodMirror, val setter: MethodMirror?): ObjectProperty<S>(name) {
+    override val type: TypeMirror get() = getter.returnType
+
     override val isImmutable: Boolean
         get() = setter != null
     override val serializer: S by prism[getter.returnType]
