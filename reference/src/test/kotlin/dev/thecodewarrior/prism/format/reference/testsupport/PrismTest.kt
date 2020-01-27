@@ -26,23 +26,25 @@ abstract class PrismTest {
         get() = _prism ?: createPrism().also { _prism = it }
 
     protected fun registerPrimitives(prism: ReferencePrism<*>) {
-        prism.register(StringSerializer)
-        prism.register(LongSerializer)
-        prism.register(IntSerializer)
-        prism.register(ShortSerializer)
-        prism.register(ByteSerializer)
-        prism.register(CharSerializer)
-        prism.register(DoubleSerializer)
-        prism.register(FloatSerializer)
-        prism.register(BooleanSerializer)
-        prism.register(PrimitiveLongSerializer)
-        prism.register(PrimitiveIntSerializer)
-        prism.register(PrimitiveShortSerializer)
-        prism.register(PrimitiveByteSerializer)
-        prism.register(PrimitiveCharSerializer)
-        prism.register(PrimitiveDoubleSerializer)
-        prism.register(PrimitiveFloatSerializer)
-        prism.register(PrimitiveBooleanSerializer)
+        prism.register(
+            StringSerializer,
+            LongSerializer,
+            IntSerializer,
+            ShortSerializer,
+            ByteSerializer,
+            CharSerializer,
+            DoubleSerializer,
+            FloatSerializer,
+            BooleanSerializer,
+            PrimitiveLongSerializer,
+            PrimitiveIntSerializer,
+            PrimitiveShortSerializer,
+            PrimitiveByteSerializer,
+            PrimitiveCharSerializer,
+            PrimitiveDoubleSerializer,
+            PrimitiveFloatSerializer,
+            PrimitiveBooleanSerializer
+        )
     }
 
     abstract fun createPrism(): ReferencePrism<*>

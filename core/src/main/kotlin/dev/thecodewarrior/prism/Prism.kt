@@ -65,15 +65,19 @@ class Prism<T: Serializer<*>> {
         return lazy
     }
 
-    fun register(factory: SerializerFactory<T>): Prism<T> {
-        _factories.removeIf { it === factory }
-        _factories.add(factory)
+    fun register(vararg factories: SerializerFactory<T>): Prism<T> {
+        factories.forEach { factory ->
+            _factories.removeIf { it === factory }
+            _factories.add(factory)
+        }
         return this
     }
 
-    fun register(serializer: T): Prism<T> {
-        _serializers.removeIf { it === serializer }
-        _serializers.add(serializer)
+    fun register(vararg serializers: T): Prism<T> {
+        serializers.forEach { serializer ->
+            _serializers.removeIf { it === serializer }
+            _serializers.add(serializer)
+        }
         return this
     }
 }

@@ -26,8 +26,7 @@ open class ObjectSerializerFactory(prism: ReferencePrism<*>): ReferenceSerialize
         @Suppress("UNCHECKED_CAST")
         override fun deserialize(node: RefNode, existing: Any?): Any {
             val state = analyzer.getState()
-            state.clear()
-            val node = node as? ObjectNode ?: throw DeserializationException("Object serializer expects an ObjectNode")
+            node as? ObjectNode ?: throw DeserializationException("Object serializer expects an ObjectNode")
             analyzer.properties.forEach { property ->
                 val existingProperty = existing?.let { property.getValue(it) }
                 state.setValue(property, property.serializer.read(node[property.name]!!, existingProperty))

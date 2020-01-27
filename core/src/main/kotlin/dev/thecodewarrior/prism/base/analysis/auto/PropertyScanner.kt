@@ -10,11 +10,15 @@ import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractGetter
 import dev.thecodewarrior.prism.annotation.RefractSetter
+import dev.thecodewarrior.prism.annotation.UpdateTest
 import dev.thecodewarrior.prism.internal.identitySetOf
 import dev.thecodewarrior.prism.utils.allDeclaredMemberProperties
 import dev.thecodewarrior.prism.utils.annotation
+import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.jvm.javaField
+import kotlin.reflect.jvm.javaMethod
 
 class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirror) {
     val candidates = mutableMapOf<String, PropertyCandidate>()
@@ -31,16 +35,16 @@ class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirr
             val count = kotlin.size + fields.size + getters.size * 0.5 + setters.size * 0.5
 
             if(count != 1.0)
-                throw InvalidTypeException("multiple properties or fields or getters for $name")
+                throw InvalidTypeException("Multiple properties or fields or getters for $name")
 
             if(kotlin.isNotEmpty())
-                throw error("kotlin properties not implemented yet")
+                return KotlinProperty.create(prism, name, type, kotlin.first())
 
             if(fields.isNotEmpty())
                 return FieldProperty(prism, name, fields.first())
 
             if(getters.isEmpty() || setters.isNotEmpty())
-                throw InvalidTypeException("setter with no getter")
+                throw InvalidTypeException("Setter with no getter")
             return AccessorProperty(prism, name, getters.first(), setters.firstOrNull())
         }
     }
@@ -82,10 +86,16 @@ abstract class ObjectProperty<S: Serializer<*>>(val name: String) {
     abstract val serializer: S
     abstract fun getValue(target: Any): Any?
     abstract fun setValue(target: Any, value: Any?)
+    /**
+     * Returns true if setting the property to the passed value requires an actual update. Typically this performs an
+     * identity-equals operation with the current value.
+     */
+    abstract fun needsUpdate(target: Any, value: Any?): Boolean
 }
 
 class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror: FieldMirror): ObjectProperty<S>(name) {
     override val type: TypeMirror get() = mirror.type
+    private val updateTest: UpdateTest.Type = mirror.annotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
 
     override val isImmutable: Boolean
         get() = mirror.isFinal
@@ -96,12 +106,23 @@ class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror:
     }
 
     override fun setValue(target: Any, value: Any?) {
+        if(isImmutable)
+            throw AutoSerializationException("Property $name is read-only")
         mirror.set(target, value)
+    }
+
+    override fun needsUpdate(target: Any, value: Any?): Boolean {
+        return when(updateTest) {
+            UpdateTest.Type.ALWAYS -> true
+            UpdateTest.Type.IDENTITY -> value !== getValue(target)
+            UpdateTest.Type.VALUE -> value != getValue(target)
+        }
     }
 }
 
 class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val getter: MethodMirror, val setter: MethodMirror?): ObjectProperty<S>(name) {
     override val type: TypeMirror get() = getter.returnType
+    private val updateTest: UpdateTest.Type = setter?.annotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
 
     override val isImmutable: Boolean
         get() = setter != null
@@ -112,6 +133,91 @@ class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val gett
     }
 
     override fun setValue(target: Any, value: Any?) {
-        setter?.call(target, value) as Any?
+        if(isImmutable)
+            throw AutoSerializationException("Property $name is read-only")
+        setter!!.call(target, value) as Any?
+    }
+
+    override fun needsUpdate(target: Any, value: Any?): Boolean {
+        return when(updateTest) {
+            UpdateTest.Type.ALWAYS -> true
+            UpdateTest.Type.IDENTITY -> value !== getValue(target)
+            UpdateTest.Type.VALUE -> value != getValue(target)
+        }
+    }
+}
+
+abstract class KotlinProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val property: KProperty<*>): ObjectProperty<S>(name) {
+    class KotlinFieldProperty<S: Serializer<*>>(
+        prism: Prism<S>, name: String, property: KProperty<*>, val mirror: FieldMirror
+    ): KotlinProperty<S>(prism, name, property) {
+        override val type: TypeMirror get() = mirror.type
+        private val updateTest: UpdateTest.Type = property.findAnnotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
+
+        override val isImmutable: Boolean
+            get() = property !is KMutableProperty<*>
+        override val serializer: S by prism[mirror.type]
+
+        override fun getValue(target: Any): Any? {
+            return mirror.get(target)
+        }
+
+        override fun setValue(target: Any, value: Any?) {
+            if(isImmutable)
+                throw AutoSerializationException("Property $name is read-only")
+            mirror.set(target, value)
+        }
+
+        override fun needsUpdate(target: Any, value: Any?): Boolean {
+            return when(updateTest) {
+                UpdateTest.Type.ALWAYS -> true
+                UpdateTest.Type.IDENTITY -> value !== getValue(target)
+                UpdateTest.Type.VALUE -> value != getValue(target)
+            }
+        }
+    }
+
+    class KotlinMethodProperty<S: Serializer<*>>(
+        prism: Prism<S>, name: String, property: KProperty<*>, val getter: MethodMirror, val setter: MethodMirror?
+    ): KotlinProperty<S>(prism, name, property) {
+        override val type: TypeMirror get() = getter.returnType
+        private val updateTest: UpdateTest.Type = property.findAnnotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
+
+        override val isImmutable: Boolean
+            get() = property !is KMutableProperty<*>
+        override val serializer: S by prism[getter.returnType]
+
+        override fun getValue(target: Any): Any? {
+            return getter.call(target)
+        }
+
+        override fun setValue(target: Any, value: Any?) {
+            if(isImmutable)
+                throw AutoSerializationException("Property $name is read-only")
+            setter!!.call(target, value) as Any?
+        }
+
+        override fun needsUpdate(target: Any, value: Any?): Boolean {
+            return when(updateTest) {
+                UpdateTest.Type.ALWAYS -> true
+                UpdateTest.Type.IDENTITY -> value !== getValue(target)
+                UpdateTest.Type.VALUE -> value != getValue(target)
+            }
+        }
+    }
+
+    companion object {
+        fun <S: Serializer<*>> create(prism: Prism<S>, name: String, parentType: ClassMirror, property: KProperty<*>): KotlinProperty<S> {
+            val field = property.javaField
+            val getterMethod = property.getter.javaMethod
+            val setterMethod = (property as? KMutableProperty<*>)?.setter?.javaMethod
+            if(getterMethod != null)
+                return KotlinMethodProperty(prism, name, property, parentType.getMethod(getterMethod)!!,
+                    setterMethod?.let { parentType.getMethod(it)!! })
+            if(field != null)
+                return KotlinFieldProperty(prism, name, property, parentType.getField(field)!!)
+
+            throw ObjectAnalysisException("Kotlin property $property has no getter method and no field")
+        }
     }
 }

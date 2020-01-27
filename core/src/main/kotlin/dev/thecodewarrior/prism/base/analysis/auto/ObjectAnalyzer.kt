@@ -1,6 +1,7 @@
 package dev.thecodewarrior.prism.base.analysis.auto
 
 import dev.thecodewarrior.mirror.type.ClassMirror
+import dev.thecodewarrior.prism.InstantiationException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.TypeAnalysis
@@ -27,7 +28,11 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             value.isPresent && property.isImmutable
         }
         if(needsInstance) {
-            val instantiator = instantiators.find { it.properties.all { values[it]?.isPresent == true } } ?: TODO() // todo: error type
+            if(instantiators.isEmpty())
+                throw InstantiationException("No instantiators exist")
+            val instantiator = instantiators.find { it.properties.all { values[it]?.isPresent == true } }
+                ?: throw InstantiationException("Unable to find an instantiator that can be called using the passed " +
+                    "properties: [${values.keys.joinToString(",") { it.name }}]")
             val instance = instantiator.createInstance(instantiator.properties.map { values[it]!!.value })
             values.forEach { (property, value) ->
                 if(value.isPresent && property !in instantiator.propertySet) {
@@ -39,7 +44,7 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             target!!
             //todo: missing keys == error?
             values.forEach { (property, value) ->
-                if(value.isPresent) {
+                if(value.isPresent && property.needsUpdate(target, value.value)) {
                     property.setValue(target, value.value)
                 }
             }
@@ -58,14 +63,14 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
         }
 
         fun setValue(property: ObjectProperty<S>, value: Any?) {
-            values[property]?.also {
+            getContainer(property).also {
                 it.isPresent = true
                 it.value = value
             }
         }
 
         fun getValue(property: ObjectProperty<S>): Any? {
-            return values[property]?.value
+            return getContainer(property).value
         }
 
         override fun populate(value: Any) {
@@ -73,6 +78,11 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
                 container.isPresent = true
                 container.value = property.getValue(value)
             }
+        }
+
+        private fun getContainer(property: ObjectProperty<S>): ValueContainer {
+            return values[property] ?: throw AutoSerializationException("The passed property $property is not from " +
+                "this object.")
         }
 
         override fun apply(target: Any?): Any {
