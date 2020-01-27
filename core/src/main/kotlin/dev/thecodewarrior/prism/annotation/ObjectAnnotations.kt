@@ -37,12 +37,12 @@ annotation class RefractSetter(val value: String)
 
 /**
  * When placed on a field, Kotlin property, or setter method, this annotation indicates what type of test should be done
- * to test whether a property has changed and needs to be set. This defaults to [Type.IDENTITY].
+ * to test whether a property has changed and needs to be set. This defaults to [Type.IDENTITY_CHANGED].
  *
  * @param value The test to use
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
-annotation class UpdateTest(val value: Type) {
+annotation class RefractUpdateTest(val value: Type) {
     enum class Type {
         /**
          * Don't perform any checks, always call the setter.
@@ -55,12 +55,12 @@ annotation class UpdateTest(val value: Type) {
          * This is generally used because many serializers for mutable types will return the existing value back, so
          * this check will skip over them.
          */
-        IDENTITY,
+        IDENTITY_CHANGED,
         /**
          * Get the current value and skip the setter if the new value is equal to the existing value by _value._ That
          * is, `newValue.equals(oldValue)`
          */
-        VALUE
+        VALUE_CHANGED
     }
 }
 

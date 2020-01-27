@@ -10,7 +10,7 @@ import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractGetter
 import dev.thecodewarrior.prism.annotation.RefractSetter
-import dev.thecodewarrior.prism.annotation.UpdateTest
+import dev.thecodewarrior.prism.annotation.RefractUpdateTest
 import dev.thecodewarrior.prism.internal.identitySetOf
 import dev.thecodewarrior.prism.utils.allDeclaredMemberProperties
 import dev.thecodewarrior.prism.utils.annotation
@@ -95,7 +95,7 @@ abstract class ObjectProperty<S: Serializer<*>>(val name: String) {
 
 class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror: FieldMirror): ObjectProperty<S>(name) {
     override val type: TypeMirror get() = mirror.type
-    private val updateTest: UpdateTest.Type = mirror.annotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
+    private val updateTest: RefractUpdateTest.Type = mirror.annotation<RefractUpdateTest>()?.value ?: RefractUpdateTest.Type.IDENTITY_CHANGED
 
     override val isImmutable: Boolean
         get() = mirror.isFinal
@@ -113,16 +113,16 @@ class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror:
 
     override fun needsUpdate(target: Any, value: Any?): Boolean {
         return when(updateTest) {
-            UpdateTest.Type.ALWAYS -> true
-            UpdateTest.Type.IDENTITY -> value !== getValue(target)
-            UpdateTest.Type.VALUE -> value != getValue(target)
+            RefractUpdateTest.Type.ALWAYS -> true
+            RefractUpdateTest.Type.IDENTITY_CHANGED -> value !== getValue(target)
+            RefractUpdateTest.Type.VALUE_CHANGED -> value != getValue(target)
         }
     }
 }
 
 class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val getter: MethodMirror, val setter: MethodMirror?): ObjectProperty<S>(name) {
     override val type: TypeMirror get() = getter.returnType
-    private val updateTest: UpdateTest.Type = setter?.annotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
+    private val updateTest: RefractUpdateTest.Type = setter?.annotation<RefractUpdateTest>()?.value ?: RefractUpdateTest.Type.IDENTITY_CHANGED
 
     override val isImmutable: Boolean
         get() = setter != null
@@ -140,9 +140,9 @@ class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val gett
 
     override fun needsUpdate(target: Any, value: Any?): Boolean {
         return when(updateTest) {
-            UpdateTest.Type.ALWAYS -> true
-            UpdateTest.Type.IDENTITY -> value !== getValue(target)
-            UpdateTest.Type.VALUE -> value != getValue(target)
+            RefractUpdateTest.Type.ALWAYS -> true
+            RefractUpdateTest.Type.IDENTITY_CHANGED -> value !== getValue(target)
+            RefractUpdateTest.Type.VALUE_CHANGED -> value != getValue(target)
         }
     }
 }
@@ -152,7 +152,7 @@ abstract class KotlinProperty<S: Serializer<*>>(prism: Prism<S>, name: String, v
         prism: Prism<S>, name: String, property: KProperty<*>, val mirror: FieldMirror
     ): KotlinProperty<S>(prism, name, property) {
         override val type: TypeMirror get() = mirror.type
-        private val updateTest: UpdateTest.Type = property.findAnnotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
+        private val updateTest: RefractUpdateTest.Type = property.findAnnotation<RefractUpdateTest>()?.value ?: RefractUpdateTest.Type.IDENTITY_CHANGED
 
         override val isImmutable: Boolean
             get() = property !is KMutableProperty<*>
@@ -170,9 +170,9 @@ abstract class KotlinProperty<S: Serializer<*>>(prism: Prism<S>, name: String, v
 
         override fun needsUpdate(target: Any, value: Any?): Boolean {
             return when(updateTest) {
-                UpdateTest.Type.ALWAYS -> true
-                UpdateTest.Type.IDENTITY -> value !== getValue(target)
-                UpdateTest.Type.VALUE -> value != getValue(target)
+                RefractUpdateTest.Type.ALWAYS -> true
+                RefractUpdateTest.Type.IDENTITY_CHANGED -> value !== getValue(target)
+                RefractUpdateTest.Type.VALUE_CHANGED -> value != getValue(target)
             }
         }
     }
@@ -181,7 +181,7 @@ abstract class KotlinProperty<S: Serializer<*>>(prism: Prism<S>, name: String, v
         prism: Prism<S>, name: String, property: KProperty<*>, val getter: MethodMirror, val setter: MethodMirror?
     ): KotlinProperty<S>(prism, name, property) {
         override val type: TypeMirror get() = getter.returnType
-        private val updateTest: UpdateTest.Type = property.findAnnotation<UpdateTest>()?.value ?: UpdateTest.Type.IDENTITY
+        private val updateTest: RefractUpdateTest.Type = property.findAnnotation<RefractUpdateTest>()?.value ?: RefractUpdateTest.Type.IDENTITY_CHANGED
 
         override val isImmutable: Boolean
             get() = property !is KMutableProperty<*>
@@ -199,9 +199,9 @@ abstract class KotlinProperty<S: Serializer<*>>(prism: Prism<S>, name: String, v
 
         override fun needsUpdate(target: Any, value: Any?): Boolean {
             return when(updateTest) {
-                UpdateTest.Type.ALWAYS -> true
-                UpdateTest.Type.IDENTITY -> value !== getValue(target)
-                UpdateTest.Type.VALUE -> value != getValue(target)
+                RefractUpdateTest.Type.ALWAYS -> true
+                RefractUpdateTest.Type.IDENTITY_CHANGED -> value !== getValue(target)
+                RefractUpdateTest.Type.VALUE_CHANGED -> value != getValue(target)
             }
         }
     }

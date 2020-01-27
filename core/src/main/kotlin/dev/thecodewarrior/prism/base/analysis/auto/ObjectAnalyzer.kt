@@ -24,8 +24,12 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
     override fun createState(): ObjectAnalysis = ObjectAnalysis()
 
     fun applyValues(target: Any?, values: Map<ObjectProperty<S>, ValueContainer>): Any {
+        values.forEach { (property, value) ->
+            if(value.isPresent)
+                value.changed = target == null || property.needsUpdate(target, value.value)
+        }
         val needsInstance = target == null || values.any { (property, value) ->
-            value.isPresent && property.isImmutable
+            value.changed && property.isImmutable
         }
         if(needsInstance) {
             if(instantiators.isEmpty())
@@ -33,7 +37,7 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             val instantiator = instantiators.find { it.properties.all { values[it]?.isPresent == true } }
                 ?: throw InstantiationException("Unable to find an instantiator that can be called using the passed " +
                     "properties: [${values.keys.joinToString(",") { it.name }}]")
-            val instance = instantiator.createInstance(instantiator.properties.map { values[it]!!.value })
+            val instance = instantiator.createInstance(instantiator.properties.map { values.getValue(it).value })
             values.forEach { (property, value) ->
                 if(value.isPresent && property !in instantiator.propertySet) {
                     property.setValue(instance, value.value)
@@ -44,7 +48,7 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             target!!
             //todo: missing keys == error?
             values.forEach { (property, value) ->
-                if(value.isPresent && property.needsUpdate(target, value.value)) {
+                if(value.isPresent && value.changed) {
                     property.setValue(target, value.value)
                 }
             }
@@ -59,6 +63,7 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             values.values.forEach {
                 it.value = null
                 it.isPresent = false
+                it.changed = false
             }
         }
 
@@ -92,8 +97,9 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
     }
 
     class ValueContainer {
-        var isPresent: Boolean = false
         var value: Any? = null
+        var isPresent: Boolean = false
+        var changed: Boolean = false
     }
 
     companion object {
