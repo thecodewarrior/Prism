@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-internal class MutabilityTest: PrismTest() {
+internal class ImmutabilityTest: PrismTest() {
     override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
         registerPrimitives(prism)
         prism.register(FallbackSerializerFactory(prism))
@@ -150,7 +150,7 @@ internal class MutabilityTest: PrismTest() {
         assertThrows<DeserializationException> {
             prism[Mirror.reflect<ImmutableFieldImmutableType>()].value.read(node, original)
         }.assertMessage("Error deserializing dev.thecodewarrior.prism.format.reference.builtin.auto" +
-            ".MutabilityTest.ImmutableFieldImmutableType")
+            ".ImmutabilityTest.ImmutableFieldImmutableType")
             .assertCause<InstantiationException>().assertMessage("No instantiators exist")
     }
 
@@ -170,7 +170,7 @@ internal class MutabilityTest: PrismTest() {
         assertThrows<DeserializationException> {
             prism[Mirror.reflect<ImmutableFieldSmartType>()].value.read(node, original)
         }.assertMessage("Error deserializing dev.thecodewarrior.prism.format.reference.builtin.auto" +
-            ".MutabilityTest.ImmutableFieldSmartType")
+            ".ImmutabilityTest.ImmutableFieldSmartType")
             .assertCause<InstantiationException>().assertMessage("No instantiators exist")
     }
 

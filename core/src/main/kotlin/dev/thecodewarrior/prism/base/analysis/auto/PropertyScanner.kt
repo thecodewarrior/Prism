@@ -52,22 +52,24 @@ class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirr
     private fun getCandidate(name: String) = candidates.getOrPut(name) { PropertyCandidate(name) }
 
     private fun populateMembers() {
-        type.allFields.forEach { field ->
+        type.fields.forEach { field ->
             val annot = field.annotation<Refract>() ?: return@forEach
             val name = if (annot.value.isBlank()) field.name else annot.value
             getCandidate(name).fields.add(field)
         }
 
-        type.allMethods.forEach { method ->
-            method.annotation<RefractGetter>()?.also { annot ->
-                getCandidate(annot.value).getters.add(method)
+        generateSequence(type) { it.superclass }
+            .flatMap { it.declaredMethods.asSequence() }
+            .forEach { method ->
+                method.annotation<RefractGetter>()?.also { annot ->
+                    getCandidate(annot.value).getters.add(method)
+                }
+                method.annotation<RefractSetter>()?.also { annot ->
+                    getCandidate(annot.value).setters.add(method)
+                }
             }
-            method.annotation<RefractSetter>()?.also { annot ->
-                getCandidate(annot.value).setters.add(method)
-            }
-        }
 
-        type.kClass!!.allDeclaredMemberProperties.forEach { property ->
+        type.kClass.allDeclaredMemberProperties.forEach { property ->
             val annot = property.findAnnotation<Refract>() ?: return@forEach
             val name = if(annot.value.isBlank()) property.name else annot.value
             getCandidate(name).kotlin.add(property)
