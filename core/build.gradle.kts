@@ -5,10 +5,13 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 // begin common
 plugins {
-    java
+    `java-library`
     kotlin("jvm") version "1.3.11"
     id("org.jetbrains.dokka")
+    `maven-publish`
 }
+
+base.archivesBaseName = "Prism"
 
 repositories {
     mavenCentral()
@@ -60,4 +63,17 @@ tasks.withType<DokkaTask> {
 fun <T> Any.dokkaDelegateClosureOf(action: T.() -> Unit) = object : Closure<Any?>(this, this) {
     @Suppress("unused") // to be called dynamically by Groovy
     fun doCall() = org.gradle.internal.Cast.uncheckedCast<T>(delegate)?.action()
+}
+
+val sourcesJar by tasks.creating(Jar::class) {
+    classifier = "sources"
+    from(java.sourceSets["main"].allSource)
+}
+
+publishing {
+    publications.create("publication", MavenPublication::class.java) {
+        from(components["java"])
+        artifact(sourcesJar)
+        this.artifactId = base.archivesBaseName
+    }
 }
