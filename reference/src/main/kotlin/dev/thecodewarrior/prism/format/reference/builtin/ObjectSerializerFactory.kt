@@ -13,14 +13,14 @@ import dev.thecodewarrior.prism.format.reference.format.NullNode
 import dev.thecodewarrior.prism.format.reference.format.ObjectNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
 
-open class ObjectSerializerFactory(prism: ReferencePrism<*>): ReferenceSerializerFactory(prism, Mirror.reflect<Any>(), {
+open class ObjectSerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<Any>(), {
     (it as ClassMirror).annotations.any { it is RefractClass }
 }) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
         return ObjectSerializer(prism, mirror)
     }
 
-    class ObjectSerializer(prism: ReferencePrism<*>, type: TypeMirror): ReferenceSerializer<Any>(type) {
+    class ObjectSerializer(prism: ReferencePrism, type: TypeMirror): ReferenceSerializer<Any>(type) {
         val analyzer = ObjectAnalyzer<Any?, ReferenceSerializer<*>>(prism, type.asClassMirror())
 
         @Suppress("UNCHECKED_CAST")

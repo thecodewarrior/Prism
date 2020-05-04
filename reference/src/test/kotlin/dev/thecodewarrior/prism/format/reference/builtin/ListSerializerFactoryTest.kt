@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 internal class ListSerializerFactoryTest: PrismTest() {
-    override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
+    override fun createPrism(): ReferencePrism = Prism<ReferenceSerializer<*>>().also { prism ->
         registerPrimitives(prism)
         prism.register(FallbackSerializerFactory(prism))
         prism.register(ListSerializerFactory(prism))

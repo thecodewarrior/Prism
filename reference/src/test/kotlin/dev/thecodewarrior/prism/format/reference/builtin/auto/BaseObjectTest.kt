@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 internal class BaseObjectTest: PrismTest() {
-    override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
+    override fun createPrism(): ReferencePrism = Prism<ReferenceSerializer<*>>().also { prism ->
         registerPrimitives(prism)
         prism.register(FallbackSerializerFactory(prism))
         prism.register(ObjectSerializerFactory(prism))

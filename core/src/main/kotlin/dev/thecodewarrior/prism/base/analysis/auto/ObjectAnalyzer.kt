@@ -3,6 +3,8 @@ package dev.thecodewarrior.prism.base.analysis.auto
 import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.prism.InstantiationException
 import dev.thecodewarrior.prism.Prism
+import dev.thecodewarrior.prism.PropertyAccessException
+import dev.thecodewarrior.prism.SerializationException
 import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.TypeAnalysis
 import dev.thecodewarrior.prism.TypeAnalyzer
@@ -40,7 +42,11 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             val instance = instantiator.createInstance(instantiator.properties.map { values.getValue(it).value })
             values.forEach { (property, value) ->
                 if(value.isPresent && property !in instantiator.propertySet) {
-                    property.setValue(instance, value.value)
+                    try {
+                        property.setValue(instance, value.value)
+                    } catch(e: Exception) {
+                        throw PropertyAccessException("Setting property ${property.name}", e)
+                    }
                 }
             }
             return instance
@@ -49,7 +55,11 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
             //todo: missing keys == error?
             values.forEach { (property, value) ->
                 if(value.isPresent && value.changed) {
-                    property.setValue(target, value.value)
+                    try {
+                        property.setValue(target, value.value)
+                    } catch(e: Exception) {
+                        throw PropertyAccessException("Setting property ${property.name}", e)
+                    }
                 }
             }
             return target
@@ -81,7 +91,11 @@ class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): T
         override fun populate(value: Any) {
             values.forEach { (property, container) ->
                 container.isPresent = true
-                container.value = property.getValue(value)
+                try {
+                    container.value = property.getValue(value)
+                } catch(e: Exception) {
+                    throw PropertyAccessException("Populating with value of ${property.name}", e)
+                }
             }
         }
 

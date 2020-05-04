@@ -12,12 +12,12 @@ import dev.thecodewarrior.prism.format.reference.format.ArrayNode
 import dev.thecodewarrior.prism.format.reference.format.NullNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
 
-open class ListSerializerFactory(prism: ReferencePrism<*>): ReferenceSerializerFactory(prism, Mirror.reflect<List<*>>()) {
+open class ListSerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<List<*>>()) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
         return ListSerializer(prism, mirror as ClassMirror)
     }
 
-    class ListSerializer(prism: ReferencePrism<*>, type: ClassMirror): ReferenceSerializer<MutableList<Any?>>(type) {
+    class ListSerializer(prism: ReferencePrism, type: ClassMirror): ReferenceSerializer<MutableList<Any?>>(type) {
         val analyzer = ListAnalyzer<Any?, ReferenceSerializer<*>>(prism, type)
 
         @Suppress("UNCHECKED_CAST")

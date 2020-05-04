@@ -9,7 +9,7 @@ import dev.thecodewarrior.prism.format.reference.ReferenceSerializerFactory
 import dev.thecodewarrior.prism.format.reference.format.LeafNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
 
-class FallbackSerializerFactory(prism: ReferencePrism<*>): ReferenceSerializerFactory(prism, Mirror.reflect<Any>()) {
+class FallbackSerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<Any>()) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
         return FallbackSerializer(mirror)
     }

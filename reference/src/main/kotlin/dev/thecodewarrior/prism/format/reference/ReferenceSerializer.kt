@@ -7,7 +7,7 @@ import dev.thecodewarrior.prism.SerializationException
 import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.format.reference.format.RefNode
 
-typealias ReferencePrism<T> = Prism<ReferenceSerializer<T>>
+typealias ReferencePrism = Prism<ReferenceSerializer<*>>
 
 abstract class ReferenceSerializer<T: Any>: Serializer<T> {
     constructor(type: TypeMirror): super(type)
@@ -20,7 +20,7 @@ abstract class ReferenceSerializer<T: Any>: Serializer<T> {
     fun read(node: RefNode, existing: Any?): Any {
         try {
             return deserialize(node, existing as T?)
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             throw DeserializationException("Error deserializing $type", e)
         }
     }
@@ -29,7 +29,7 @@ abstract class ReferenceSerializer<T: Any>: Serializer<T> {
     fun write(value: Any): RefNode {
         try {
             return serialize(value as T)
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             throw SerializationException("Error serializing $type", e)
         }
     }

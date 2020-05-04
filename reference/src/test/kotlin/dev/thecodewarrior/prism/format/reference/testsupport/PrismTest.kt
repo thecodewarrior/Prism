@@ -21,11 +21,11 @@ import dev.thecodewarrior.prism.format.reference.builtin.StringSerializer
 import org.junit.jupiter.api.BeforeEach
 
 abstract class PrismTest {
-    private var _prism: ReferencePrism<*>? = null
-    val prism: ReferencePrism<*>
+    private var _prism: ReferencePrism? = null
+    val prism: ReferencePrism
         get() = _prism ?: createPrism().also { _prism = it }
 
-    protected fun registerPrimitives(prism: ReferencePrism<*>) {
+    protected fun registerPrimitives(prism: ReferencePrism) {
         prism.register(
             StringSerializer,
             LongSerializer,
@@ -47,7 +47,7 @@ abstract class PrismTest {
         )
     }
 
-    abstract fun createPrism(): ReferencePrism<*>
+    abstract fun createPrism(): ReferencePrism
 
     @BeforeEach
     private fun preparePrism() {

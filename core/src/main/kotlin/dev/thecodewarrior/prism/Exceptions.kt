@@ -42,6 +42,16 @@ class InstantiationException: PrismException {
     constructor(cause: Throwable?): super(cause)
 }
 
+/**
+ * Thrown when the object analyzer encounters an error occurs getting or setting a property's value
+ */
+class PropertyAccessException: PrismException {
+    constructor(): super()
+    constructor(message: String?): super(message)
+    constructor(message: String?, cause: Throwable?): super(message, cause)
+    constructor(cause: Throwable?): super(cause)
+}
+
 class SerializerNotFoundException: PrismException {
     constructor(): super()
     constructor(message: String?): super(message)

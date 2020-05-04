@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 internal class FallbackSerializerFactoryTest: PrismTest() {
-    override fun createPrism(): ReferencePrism<*> = Prism<ReferenceSerializer<*>>().also { prism ->
+    override fun createPrism(): ReferencePrism = Prism<ReferenceSerializer<*>>().also { prism ->
         prism.register(FallbackSerializerFactory(prism))
     }
 

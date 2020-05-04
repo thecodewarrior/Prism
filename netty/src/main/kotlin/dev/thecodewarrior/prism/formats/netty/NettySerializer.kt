@@ -16,7 +16,7 @@ abstract class NettySerializer<T: Any>: Serializer<T> {
     fun read(buf: ByteBuf, existing: Any?, syncing: Boolean): Any {
         try {
             return deserialize(buf, existing as T?, syncing)
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             throw PrismException("Error deserializing $type", e)
         }
     }
@@ -25,7 +25,7 @@ abstract class NettySerializer<T: Any>: Serializer<T> {
     fun write(buf: ByteBuf, value: Any, syncing: Boolean) {
         try {
             return serialize(buf, value as T, syncing)
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             throw PrismException("Error serializing $type", e)
         }
     }
