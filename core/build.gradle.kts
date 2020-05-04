@@ -16,10 +16,10 @@ repositories {
 }
 
 dependencies {
-    compile(kotlin("stdlib-jdk8"))
-    compile(kotlin("reflect"))
+    implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("reflect"))
     testImplementation("org.junit.jupiter", "junit-jupiter-api", "5.3.0-M1")
-    testCompile("com.nhaarman", "mockito-kotlin-kt1.1", "1.5.0")
+    testImplementation("com.nhaarman", "mockito-kotlin-kt1.1", "1.5.0")
 }
 
 configure<JavaPluginConvention> {
@@ -35,10 +35,7 @@ tasks.withType<KotlinCompile> {
 dependencies {
     compile(kotlin("reflect"))
     compile(kotlin("stdlib-jdk8"))
-    compile("com.github.thecodewarrior", "Mirror", "-SNAPSHOT") { isChanging = true }
-    compile("org.apache.logging.log4j:log4j-api:2.12.0")
-    compile("org.apache.logging.log4j:log4j-core:2.12.0")
-    compile("org.apache.logging.log4j:log4j-slf4j-impl:2.12.0")
+    compile("com.github.thecodewarrior", "Mirror", "cdd1ec3034")
 }
 
 tasks.withType<DokkaTask> {
