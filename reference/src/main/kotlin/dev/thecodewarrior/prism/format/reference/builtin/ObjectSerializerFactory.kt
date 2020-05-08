@@ -14,7 +14,7 @@ import dev.thecodewarrior.prism.format.reference.format.ObjectNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
 
 open class ObjectSerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<Any>(), {
-    (it as ClassMirror).annotations.any { it is RefractClass }
+    (it as? ClassMirror)?.annotations?.any { it is RefractClass } == true
 }) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
         return ObjectSerializer(prism, mirror)

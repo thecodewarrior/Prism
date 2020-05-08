@@ -29,6 +29,8 @@ internal class ListSerializerFactoryTest: PrismTest() {
 //        serializer as ListSerializerFactory.ListSerializer
 //        assertSame(Mirror.reflect<List<String>>(), serializer.type)
 //    }
+// TODO - test multiple array types that have no-arg constructors
+// TODO - maybe hard-code support for Collections.unmodifiable* lists?
 
     @Test
     fun getSerializer_withArrayList_shouldReturnArrayListSerializer() {

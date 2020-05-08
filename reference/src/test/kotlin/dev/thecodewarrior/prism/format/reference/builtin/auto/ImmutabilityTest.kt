@@ -6,6 +6,7 @@ import dev.thecodewarrior.prism.InstantiationException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractClass
+import dev.thecodewarrior.prism.annotation.RefractConstructor
 import dev.thecodewarrior.prism.annotation.RefractUpdateTest
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
@@ -18,6 +19,7 @@ import dev.thecodewarrior.prism.format.reference.testsupport.PrismTest
 import dev.thecodewarrior.prism.format.reference.testsupport.assertCause
 import dev.thecodewarrior.prism.format.reference.testsupport.assertMessage
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -250,4 +252,27 @@ internal class ImmutabilityTest: PrismTest() {
         assertEquals(ImmutableType(2), deserialized.field)
         assertEquals(1, deserialized.setterCalls)
     }
+
+    @RefractClass
+    private data class PostMutateOrder @RefractConstructor constructor(@Refract val field: Int) {
+        @Refract
+        var someProperty: Int = 0
+    }
+
+    @Test
+    fun `deserializing with an immutable property should set mutable properties based on deltas with the new object`() {
+        val node = ObjectNode.build {
+            "field" *= 2
+            "someProperty" *= 2
+        }
+        val existing = PostMutateOrder(1)
+        existing.someProperty = 2 // if the serializer bases the required properties
+        val deserialized = prism[Mirror.reflect<PostMutateOrder>()].value.read(node, existing)
+        assertNotSame(existing, deserialized)
+        deserialized as PostMutateOrder
+        assertEquals(2, deserialized.field)
+        assertEquals(2, deserialized.someProperty)
+    }
+
+    //TODO: creating a new instance with only some properties populated should populate with old instance's values
 }

@@ -35,4 +35,10 @@ internal class BaseObjectTest: PrismTest() {
         assertEquals(ObjectSerializerFactory.ObjectSerializer::class.java, serializer.javaClass)
         assertSame(Mirror.reflect<AnnotatedClass>(), serializer.type)
     }
+
+    @Test
+    fun getSerializer_withArray_shouldReturnFallbackSerializer() {
+        val serializer = prism[Mirror.reflect<Array<String>>()].value
+        assertEquals(FallbackSerializerFactory.FallbackSerializer::class.java, serializer.javaClass)
+    }
 }

@@ -1,11 +1,13 @@
 package dev.thecodewarrior.prism.format.reference.builtin
 
 import dev.thecodewarrior.mirror.Mirror
+import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.SerializerNotFoundException
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.format.LeafNode
+import dev.thecodewarrior.prism.format.reference.format.ObjectNode
 import dev.thecodewarrior.prism.format.reference.testsupport.PrismTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -45,5 +47,10 @@ internal class FallbackSerializerFactoryTest: PrismTest() {
 
     @Test
     fun deserialize_withWrongNodeType_shouldThrow() {
+        val theObject = Any()
+        val theLeaf = ObjectNode()
+        assertThrows<DeserializationException> {
+            prism[Mirror.types.any].value.read(theLeaf, null)
+        }
     }
 }
