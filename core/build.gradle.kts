@@ -32,6 +32,7 @@ configure<JavaPluginConvention> {
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
     kotlinOptions.javaParameters = true
+    kotlinOptions.freeCompilerArgs += listOf("-Xjvm-default=enable")
 }
 // end common
 

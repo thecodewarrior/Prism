@@ -7,7 +7,6 @@ import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractClass
 import dev.thecodewarrior.prism.annotation.RefractConstructor
-import dev.thecodewarrior.prism.annotation.RefractUpdateTest
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.FallbackSerializerFactory
@@ -187,72 +186,6 @@ internal class ImmutabilityTest: PrismTest() {
         deserialized as ImmutableFieldSmartType
         assertSame(original.field, deserialized.field)
     }
-
-    @RefractClass
-    private data class MutableAlwaysUpdateFieldSmartType(private var _field: SmartType) {
-        var setterCalls = 0
-        @Refract
-        @RefractUpdateTest(RefractUpdateTest.Type.ALWAYS)
-        var field: SmartType
-            get() = _field
-            set(value) {
-                setterCalls++
-                _field = value
-            }
-    }
-
-    @Test
-    fun deserialize_withMutableAlwaysUpdateField_andSmartType_shouldCallSetterWithIdenticalValue() {
-        val node = ObjectNode.build {
-            "field" *= 1
-        }
-        val original = MutableAlwaysUpdateFieldSmartType(SmartType(1))
-        val deserialized = prism[Mirror.reflect<MutableAlwaysUpdateFieldSmartType>()].value.read(node, original)
-        assertSame(original, deserialized)
-        deserialized as MutableAlwaysUpdateFieldSmartType
-        assertSame(original.field, deserialized.field)
-        assertEquals(1, deserialized.setterCalls)
-    }
-
-    @RefractClass
-    private data class MutableEqualsUpdateFieldImmutableType(private var _field: ImmutableType) {
-        var setterCalls = 0
-        @Refract
-        @RefractUpdateTest(RefractUpdateTest.Type.VALUE_CHANGED)
-        var field: ImmutableType
-            get() = _field
-            set(value) {
-                setterCalls++
-                _field = value
-            }
-    }
-
-    @Test
-    fun deserialize_withMutableEqualsUpdateField_andUnchangedImmutableType_shouldNotCallSetter() {
-        val node = ObjectNode.build {
-            "field" *= 1
-        }
-        val original = MutableEqualsUpdateFieldImmutableType(ImmutableType(1))
-        val deserialized = prism[Mirror.reflect<MutableEqualsUpdateFieldImmutableType>()].value.read(node, original)
-        assertSame(original, deserialized)
-        deserialized as MutableEqualsUpdateFieldImmutableType
-        assertSame(original.field, deserialized.field)
-        assertEquals(0, deserialized.setterCalls)
-    }
-
-    @Test
-    fun deserialize_withMutableEqualsUpdateField_andChangedImmutableType_shouldCallSetterWithNewValue() {
-        val node = ObjectNode.build {
-            "field" *= 2
-        }
-        val original = MutableEqualsUpdateFieldImmutableType(ImmutableType(1))
-        val deserialized = prism[Mirror.reflect<MutableEqualsUpdateFieldImmutableType>()].value.read(node, original)
-        assertSame(original, deserialized)
-        deserialized as MutableEqualsUpdateFieldImmutableType
-        assertEquals(ImmutableType(2), deserialized.field)
-        assertEquals(1, deserialized.setterCalls)
-    }
-
     @RefractClass
     private data class PostMutateOrder @RefractConstructor constructor(@Refract val field: Int) {
         @Refract
@@ -273,6 +206,4 @@ internal class ImmutabilityTest: PrismTest() {
         assertEquals(2, deserialized.field)
         assertEquals(2, deserialized.someProperty)
     }
-
-    //TODO: creating a new instance with only some properties populated should populate with old instance's values
 }

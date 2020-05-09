@@ -6,23 +6,28 @@ import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.IllegalTypeException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.Serializer
-import dev.thecodewarrior.prism.TypeAnalysis
 import dev.thecodewarrior.prism.TypeAnalyzer
+import dev.thecodewarrior.prism.TypeReader
+import dev.thecodewarrior.prism.TypeWriter
 import java.lang.IndexOutOfBoundsException
+import java.util.Arrays
 
-class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror): TypeAnalyzer<ArrayAnalyzer<T, S>.ArrayAnalysis, S>(prism, type) {
+class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
+    : TypeAnalyzer<Array<T>, ArrayAnalyzer<T, S>.Reader, ArrayAnalyzer<T, S>.Writer, S>(prism, type) {
     val elementType: TypeMirror = type.component
-    val elementSerializer: S by prism[elementType]
 
-    override fun createState() = ArrayAnalysis()
+    override fun createReader(): Reader = Reader()
+    override fun createWriter(): Writer = Writer()
 
-    inner class ArrayAnalysis: TypeAnalysis<Array<T>>() {
-        var buffer = ArrayList<T?>()
-            private set
+    inner class Reader: TypeReader<Array<T>> {
+        val serializer: S by prism[elementType]
+        private var buffer = ArrayList<T?>()
+
+        private var existing: Array<T>? = null
 
         /**
-         * Ensures the buffer can contain at least [length] elements. This can be used in cases where the element count
-         * is known before deserializing
+         * Ensures the buffer can contain at least [length] elements, potentially increasing efficiency. This can be
+         * used in cases where the element count is known before deserializing.
          */
         fun reserve(length: Int) {
             buffer.ensureCapacity(length)
@@ -53,14 +58,25 @@ class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror): Ty
             buffer.add(value)
         }
 
-        override fun clear() {
-            buffer.clear()
+        override fun load(existing: Array<T>?) {
+            this.existing = existing
         }
 
-        override fun apply(target: Array<T>?): Array<T> {
+        override fun release() {
+            existing = null
+            if(buffer.size > 500) {
+                buffer = ArrayList()
+            } else {
+                buffer.clear()
+            }
+            release(this)
+        }
+
+        override fun apply(): Array<T> {
+            val existing = existing
             val value: Array<T>
-            if(buffer.size == target?.size) {
-                value = target
+            if(buffer.size == existing?.size) {
+                value = existing
             } else {
                 @Suppress("UNCHECKED_CAST")
                 value = type.asArrayMirror().newInstance(buffer.size) as Array<T>
@@ -71,18 +87,22 @@ class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror): Ty
                 value[index] = element as T
             }
 
-            if(buffer.size > 500) {
-                buffer = ArrayList()
-            } else {
-                buffer.clear()
-            }
-
             return value
         }
+    }
 
-        override fun populate(value: Array<T>) {
-            clear()
-            buffer.addAll(value)
+    inner class Writer: TypeWriter<Array<T>> {
+        val serializer: S by prism[elementType]
+        var elements: List<T> = emptyList()
+            private set
+
+        override fun load(value: Array<T>) {
+            elements = value.asList()
+        }
+
+        override fun release() {
+            elements = emptyList()
+            release(this)
         }
     }
 }

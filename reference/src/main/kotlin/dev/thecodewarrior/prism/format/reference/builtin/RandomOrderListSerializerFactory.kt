@@ -24,42 +24,40 @@ open class RandomOrderListSerializerFactory(prism: ReferencePrism): ReferenceSer
 
         @Suppress("UNCHECKED_CAST")
         override fun deserialize(node: RefNode, existing: MutableList<Any?>?): MutableList<Any?> {
-            val state = analyzer.getState()
-            if(node !is ObjectNode)
-                throw DeserializationException("Random list serializer expects an ObjectNode")
-            val length = node.getLeaf("length").value as Int
-            val arrayNode = node.getArray("data")
-            state.padToLength(length)
-            arrayNode.forEachIndexed { i, entry ->
-                try {
-                    entry as ObjectNode
-                    val index = entry.getLeaf("index").value as Int
-                    val valueNode = entry["value"]!!
-                    state.set(index, analyzer.elementSerializer.read(valueNode, existing?.getOrNull(index)))
-                } catch(e: Exception) {
-                    throw DeserializationException("Error deserializing entry $i", e)
+            if (node !is ObjectNode) throw DeserializationException("Random list serializer expects an ObjectNode")
+            analyzer.getReader(existing).use { reader ->
+                val length = node.getLeaf("length").value as Int
+                val arrayNode = node.getArray("data")
+                reader.padToLength(length)
+                arrayNode.forEachIndexed { i, entry ->
+                    try {
+                        entry as ObjectNode
+                        val index = entry.getLeaf("index").value as Int
+                        val valueNode = entry["value"]!!
+                        reader.set(index, reader.serializer.read(valueNode, existing?.getOrNull(index)))
+                    } catch (e: Exception) {
+                        throw DeserializationException("Error deserializing entry $i", e)
+                    }
                 }
+                return reader.apply()
             }
-            val newValue = state.apply(existing)
-            analyzer.releaseState(state)
-            return newValue
         }
 
         override fun serialize(value: MutableList<Any?>): RefNode {
-            val state = analyzer.getState()
-            val arrayNode = ArrayNode()
-            state.populate(value)
-            state.buffer.forEachIndexed { index, v ->
-                if(v != null)
-                    arrayNode.add(ObjectNode.build {
-                        "index" *= index
-                        "value" *= analyzer.elementSerializer.write(v)
-                    })
-            }
-            analyzer.releaseState(state)
-            return ObjectNode.build {
-                "length" *= value.size
-                "data" *= arrayNode
+            analyzer.getWriter(value).use { writer ->
+                val arrayNode = ArrayNode()
+                writer.elements.forEachIndexed { index, v ->
+                    if(v != null)
+                        arrayNode.add(ObjectNode.build {
+                            "index" *= index
+                            "value" *= writer.serializer.write(v)
+                        })
+                }
+                return ObjectNode.build {
+                    "length" *= value.size
+                    "data" *= arrayNode
+                }
+
             }
         }
     }

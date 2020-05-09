@@ -4,117 +4,26 @@ import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.prism.InstantiationException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.PropertyAccessException
-import dev.thecodewarrior.prism.SerializationException
 import dev.thecodewarrior.prism.Serializer
-import dev.thecodewarrior.prism.TypeAnalysis
 import dev.thecodewarrior.prism.TypeAnalyzer
+import dev.thecodewarrior.prism.TypeReader
+import dev.thecodewarrior.prism.TypeWriter
 import dev.thecodewarrior.prism.internal.unmodifiableView
 
-class ObjectAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror): TypeAnalyzer<ObjectAnalyzer<T, S>.ObjectAnalysis, S>(prism, type)  {
+class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
+    : TypeAnalyzer<T, ObjectReader<T, S>, ObjectWriter<T, S>, S>(prism, type)  {
     val properties: List<ObjectProperty<S>>
-    val nameMap: Map<String, ObjectProperty<S>>
-    val instantiators: List<ObjectInstantiator<S>>
+    val constructor: ObjectConstructor?
 
     init {
+        // TODO: enforce that the iteration order here is stable
         val propertyScanner = PropertyScanner(prism, type)
         properties = propertyScanner.properties.unmodifiableView()
-        nameMap = properties.associateBy { it.name }.unmodifiableView()
-        val instantiatorScanner = InstantiatorScanner(prism, type, properties)
-        instantiators = instantiatorScanner.instantiators.unmodifiableView()
+        constructor = ConstructorScanner.findConstructor(type, properties)
     }
 
-    override fun createState(): ObjectAnalysis = ObjectAnalysis()
-
-    fun applyValues(target: Any?, values: Map<ObjectProperty<S>, ValueContainer>): Any {
-        values.forEach { (property, value) ->
-            if(value.isPresent)
-                value.changed = target == null || property.needsUpdate(target, value.value)
-        }
-        val needsInstance = target == null || values.any { (property, value) ->
-            value.changed && property.isImmutable
-        }
-        if(needsInstance) {
-            if(instantiators.isEmpty())
-                throw InstantiationException("No instantiators exist")
-            val instantiator = instantiators.find { it.properties.all { values[it]?.isPresent == true } }
-                ?: throw InstantiationException("Unable to find an instantiator that can be called using the passed " +
-                    "properties: [${values.keys.joinToString(",") { it.name }}]")
-            val instance = instantiator.createInstance(instantiator.properties.map { values.getValue(it).value })
-            values.forEach { (property, value) ->
-                if(value.isPresent && property !in instantiator.propertySet) {
-                    try {
-                        property.setValue(instance, value.value)
-                    } catch(e: Exception) {
-                        throw PropertyAccessException("Setting property ${property.name}", e)
-                    }
-                }
-            }
-            return instance
-        } else {
-            target!!
-            //todo: missing keys == error?
-            values.forEach { (property, value) ->
-                if(value.isPresent && value.changed) {
-                    try {
-                        property.setValue(target, value.value)
-                    } catch(e: Exception) {
-                        throw PropertyAccessException("Setting property ${property.name}", e)
-                    }
-                }
-            }
-            return target
-        }
-    }
-
-    inner class ObjectAnalysis: TypeAnalysis<Any>() {
-        val values = properties.associateWith { ValueContainer() }
-
-        override fun clear() {
-            values.values.forEach {
-                it.value = null
-                it.isPresent = false
-                it.changed = false
-            }
-        }
-
-        fun setValue(property: ObjectProperty<S>, value: Any?) {
-            getContainer(property).also {
-                it.isPresent = true
-                it.value = value
-            }
-        }
-
-        fun getValue(property: ObjectProperty<S>): Any? {
-            return getContainer(property).value
-        }
-
-        override fun populate(value: Any) {
-            values.forEach { (property, container) ->
-                container.isPresent = true
-                try {
-                    container.value = property.getValue(value)
-                } catch(e: Exception) {
-                    throw PropertyAccessException("Populating with value of ${property.name}", e)
-                }
-            }
-        }
-
-        private fun getContainer(property: ObjectProperty<S>): ValueContainer {
-            return values[property] ?: throw AutoSerializationException("The passed property $property is not from " +
-                "this object.")
-        }
-
-        override fun apply(target: Any?): Any {
-            return applyValues(target, values)
-        }
-
-    }
-
-    class ValueContainer {
-        var value: Any? = null
-        var isPresent: Boolean = false
-        var changed: Boolean = false
-    }
+    override fun createReader(): ObjectReader<T, S> = ObjectReaderImpl(this)
+    override fun createWriter(): ObjectWriter<T, S> = ObjectWriterImpl(this)
 
     companion object {
         private val _nullableAnnotations: MutableList<String> = mutableListOf(

@@ -10,65 +10,84 @@ import java.util.concurrent.ConcurrentLinkedQueue
  *
  * A type analyzer analyzes types and objects to determine the best way to get and set data. This often includes
  * decisions such as whether a new instance of the object is needed, and then if so what constructor to use. Some
- * serializers will change how they set data based on that data, such as not instantiating new objects if only a
+ * serializers will change how they set data based on that data, such as not instantiating new objects if only mutable
+ * fields were modified.
  *
- * Type analyzers can have multiple state instances, each of which has internal buffers to store data before
- * serializing or deserializing. Among the simplest buffer would be for a List serializer, which would have an internal
- * list where elements that need to be serialized and elements that have just been deserialized are stored temporarily.
- * Doing it this way means the analyzer has access to all the data when it comes time to deserialize, allowing for much
- * more complex deserialization strategies.
- *
- * Well-built analyzers should be thread safe, however the [TypeAnalysis] objects they return may not be.
+ * Well-built analyzers should be thread safe, however the [TypeReader] and [TypeWriter] objects they return may not be.
  */
-abstract class TypeAnalyzer<T: TypeAnalysis<*>, S: Serializer<*>>(val prism: Prism<S>, val type: ConcreteTypeMirror) {
-    protected abstract fun createState(): T
+abstract class TypeAnalyzer<T: Any, R: TypeReader<T>, W: TypeWriter<T>, S: Serializer<*>>(val prism: Prism<S>, val type: ConcreteTypeMirror) {
+    protected abstract fun createReader(): R
+    protected abstract fun createWriter(): W
 
-    private val statePool = ConcurrentLinkedQueue<T>()
+    private val readerPool = ConcurrentLinkedQueue<R>()
+    private val writerPool = ConcurrentLinkedQueue<W>()
 
-    /**
-     * Adds a [TypeAnalysis] state object back to the pool to be returned by a later call to [getState].
-     */
-    fun releaseState(state: T) {
-        state.clear()
-        statePool.add(state)
+    fun getReader(existing: T?): R {
+        val reader = readerPool.poll() ?: createReader()
+        reader.load(existing)
+        return reader
     }
 
-    /**
-     * Gets a pooled [TypeAnalysis] state object. The returned object should be passed to [releaseState] when the
-     * (de)serialization operation has been completed.
-     */
-    fun getState(): T {
-        return (statePool.poll() ?: createState()).also { it.clear() }
+    fun getWriter(value: T): W {
+        val writer = writerPool.poll() ?: createWriter()
+        writer.load(value)
+        return writer
+    }
+
+    fun release(reader: R) {
+        readerPool.add(reader)
+    }
+    fun release(writer: W) {
+        writerPool.add(writer)
     }
 }
 
 /**
- * TypeAnalysis objects are used to allow multi-threaded and recursive use of [type analyzers][TypeAnalyzer]. Since the
- * type analyzer might be used recursively, the analyzer itself can't store the intermediate state for a
- * (de)serialization operation. Because of this, type analyzers provide pooled type analysis objects, each of which
- * stores the intermediate state required for their operation.
+ * TypeReaders manage the process of assembling data into final objects, potentially integrating the data into existing
+ * objects as opposed to creating new ones. Type readers should ideally have all the information needed to deserialize
+ * the data available. e.g. the user shouldn't have to call out to the type analyzer itself to get a list's element
+ * serializer, that should be present in the type reader.
  */
-abstract class TypeAnalysis<T: Any> {
+interface TypeReader<T: Any>: AutoCloseable {
     /**
-     * Reset this analyzer's internal buffer
+     * Load an existing value in preparation for deserialization
      */
-    abstract fun clear()
+    fun load(existing: T?)
 
     /**
-     * Apply the current buffer to the passed object or create and initialize a new object if null is passed or
-     * instantiation is otherwise necessary.
-     *
-     * @throws InstantiationException if an object instantiation was required but could not be performed
-     * @throws PrismException if there was an error applying the buffer
-     *
-     * @return The passed object, or the newly created object if instantiation was necessary.
+     * Apply the read data, producing a new object or mutating and returning the existing object
      */
-    abstract fun apply(target: T?): T
+    fun apply(): T
 
     /**
-     * Clear the buffer and populate it with the data from the passed object.
-     *
-     * @throws PrismException if there was an error populating the buffer
+     * Clears this reader's state and returns it to the [TypeAnalyzer]'s pool
      */
-    abstract fun populate(value: T)
+    fun release()
+
+    @JvmDefault
+    override fun close() {
+        release()
+    }
+}
+
+/**
+ * TypeWriters manage the process of extracting meaningful data from objects of their respective type. Type writers
+ * should ideally have all the information needed to serialize the data available. e.g. the user shouldn't have to call
+ * out to the type analyzer itself to get a list's element serializer, that should be present in the type writer.
+ */
+interface TypeWriter<T: Any>: AutoCloseable {
+    /**
+     * Load a value in preparation for serialization
+     */
+    fun load(value: T) {}
+
+    /**
+     * Clears the writer's state and returns it to the [TypeAnalyzer]'s pool
+     */
+    fun release()
+
+    @JvmDefault
+    override fun close() {
+        release()
+    }
 }

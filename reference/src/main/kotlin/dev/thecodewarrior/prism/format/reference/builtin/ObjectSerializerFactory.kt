@@ -21,35 +21,33 @@ open class ObjectSerializerFactory(prism: ReferencePrism): ReferenceSerializerFa
     }
 
     class ObjectSerializer(prism: ReferencePrism, type: TypeMirror): ReferenceSerializer<Any>(type) {
-        val analyzer = ObjectAnalyzer<Any?, ReferenceSerializer<*>>(prism, type.asClassMirror())
+        val analyzer = ObjectAnalyzer<Any, ReferenceSerializer<*>>(prism, type.asClassMirror())
 
         @Suppress("UNCHECKED_CAST")
         override fun deserialize(node: RefNode, existing: Any?): Any {
-            val state = analyzer.getState()
-            node as? ObjectNode ?: throw DeserializationException("Object serializer expects an ObjectNode")
-            analyzer.properties.forEach { property ->
-                val existingProperty = existing?.let { property.getValue(it) }
-                state.setValue(property, property.serializer.read(node[property.name]!!, existingProperty))
+            if(node !is ObjectNode) throw DeserializationException("Object serializer expects an ObjectNode")
+
+            analyzer.getReader(existing).use { reader ->
+                reader.properties.forEach { property ->
+                    node[property.name]?.also {
+                        property.value = property.serializer.read(it, property.existing)
+                    }
+                }
+                return reader.apply()
             }
-            val newValue = state.apply(existing)
-            analyzer.releaseState(state)
-            return newValue
         }
 
         override fun serialize(value: Any): RefNode {
-            val state = analyzer.getState()
             val node = ObjectNode()
-            state.populate(value)
-            state.values.forEach { (property, propertyValue) ->
-                val v = propertyValue.value
-                if(propertyValue.isPresent) {
-                    if(v == null)
+            analyzer.getWriter(value).use { writer ->
+                writer.properties.forEach { property ->
+                    val propertyValue = property.value
+                    if(propertyValue == null)
                         node[property.name] = NullNode
                     else
-                        node[property.name] = property.serializer.write(v)
+                        node[property.name] = property.serializer.write(propertyValue)
                 }
             }
-            analyzer.releaseState(state)
             return node
         }
     }

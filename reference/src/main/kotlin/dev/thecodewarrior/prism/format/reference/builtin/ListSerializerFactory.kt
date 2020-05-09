@@ -22,35 +22,33 @@ open class ListSerializerFactory(prism: ReferencePrism): ReferenceSerializerFact
 
         @Suppress("UNCHECKED_CAST")
         override fun deserialize(node: RefNode, existing: MutableList<Any?>?): MutableList<Any?> {
-            val state = analyzer.getState()
             node as? ArrayNode ?: throw DeserializationException("List serializer expects an ArrayNode")
-            state.reserve(node.size)
-            node.forEachIndexed { i, it ->
-                try {
-                    state.add(when (it) {
-                        NullNode -> null
-                        else -> analyzer.elementSerializer.read(it, existing?.getOrNull(i))
-                    })
-                } catch(e: Exception) {
-                    throw DeserializationException("Error deserializing element $i", e)
+            analyzer.getReader(existing).use { reader ->
+                reader.reserve(node.size)
+                node.forEachIndexed { i, it ->
+                    try {
+                        reader.add(when (it) {
+                            NullNode -> null
+                            else -> reader.serializer.read(it, existing?.getOrNull(i))
+                        })
+                    } catch(e: Exception) {
+                        throw DeserializationException("Error deserializing element $i", e)
+                    }
                 }
+                return reader.apply()
             }
-            val newValue = state.apply(existing)
-            analyzer.releaseState(state)
-            return newValue
         }
 
         override fun serialize(value: MutableList<Any?>): RefNode {
-            val state = analyzer.getState()
             val node = ArrayNode()
-            state.populate(value)
-            state.buffer.forEach {
-                if(it == null)
-                    node.add(NullNode)
-                else
-                    node.add(analyzer.elementSerializer.write(it))
+            analyzer.getWriter(value).use { writer ->
+                writer.elements.forEach {
+                    if(it == null)
+                        node.add(NullNode)
+                    else
+                        node.add(writer.serializer.write(it))
+                }
             }
-            analyzer.releaseState(state)
             return node
         }
     }
