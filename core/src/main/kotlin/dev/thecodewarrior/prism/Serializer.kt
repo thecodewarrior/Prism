@@ -12,14 +12,14 @@ import dev.thecodewarrior.mirror.type.TypeMirror
  *
  * @param T the type being serialized
  */
-abstract class Serializer<T: Any> {
-    val type: TypeMirror
+public abstract class Serializer<T: Any> {
+    public val type: TypeMirror
 
-    constructor(type: TypeMirror) {
+    public constructor(type: TypeMirror) {
         this.type = type
     }
 
-    constructor() {
+    public constructor() {
         this.type = Mirror.reflectClass(this.javaClass).findSuperclass(Serializer::class.java)!!.typeParameters[0]
     }
 
@@ -31,7 +31,7 @@ abstract class Serializer<T: Any> {
      * For increased accuracy, some "container" types may elect to create a custom equality check that utilizes the
      * contained serializers' [didChange] methods. Doing this is not required, but is strongly recommended.
      */
-    open fun didChange(oldValue: T, newValue: T): Boolean {
+    public open fun didChange(oldValue: T, newValue: T): Boolean {
         return oldValue == newValue
     }
 }

@@ -12,19 +12,19 @@ import dev.thecodewarrior.prism.TypeWriter
 import java.lang.IndexOutOfBoundsException
 import java.util.Arrays
 
-class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
+public class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
     : TypeAnalyzer<MutableList<T>, ListAnalyzer<T, S>.Reader, ListAnalyzer<T, S>.Writer, S>(prism, type) {
-    val listType: ClassMirror = type.findSuperclass(List::class.java)?.asClassMirror()
+    public val listType: ClassMirror = type.findSuperclass(List::class.java)?.asClassMirror()
         ?: throw IllegalTypeException()
-    val elementType: TypeMirror = listType.typeParameters[0]
+    public val elementType: TypeMirror = listType.typeParameters[0]
 
     private var constructor = type.declaredConstructors.find { it.parameters.isEmpty() }!! // TODO replace with helper
 
     override fun createReader(): Reader = Reader()
     override fun createWriter(): Writer = Writer()
 
-    inner class Reader: TypeReader<MutableList<T>> {
-        val serializer: S by prism[elementType]
+    public inner class Reader: TypeReader<MutableList<T>> {
+        public val serializer: S by prism[elementType]
         private var buffer = ArrayList<T?>()
         private var existing: MutableList<T>? = null
 
@@ -32,7 +32,7 @@ class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
          * Ensures the buffer can contain at least [length] elements, potentially increasing efficiency. This can be
          * used in cases where the element count is known before deserializing.
          */
-        fun reserve(length: Int) {
+        public fun reserve(length: Int) {
             buffer.ensureCapacity(length)
         }
 
@@ -41,7 +41,7 @@ class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
          * can be used in cases where the element count is known before deserializing, and *must* be used if elements
          * are going to be populated using [set].
          */
-        fun padToLength(length: Int) {
+        public fun padToLength(length: Int) {
             while(buffer.size < length)
                 buffer.add(null)
         }
@@ -53,11 +53,11 @@ class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
          *
          * @throws IndexOutOfBoundsException if the index is negative or beyond the capacity set using [padToLength]
          */
-        fun set(index: Int, value: T) {
+        public fun set(index: Int, value: T) {
             buffer[index] = value
         }
 
-        fun add(value: T) {
+        public fun add(value: T) {
             buffer.add(value)
         }
 
@@ -92,9 +92,9 @@ class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
         }
     }
 
-    inner class Writer: TypeWriter<MutableList<T>> {
-        val serializer: S by prism[elementType]
-        var elements: List<T> = emptyList()
+    public inner class Writer: TypeWriter<MutableList<T>> {
+        public val serializer: S by prism[elementType]
+        public var elements: List<T> = emptyList()
             private set
 
         override fun load(value: MutableList<T>) {

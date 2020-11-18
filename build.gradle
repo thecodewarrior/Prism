@@ -1,0 +1,69 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.0' apply false
+}
+
+def maven_version = library_version
+def snapshotBranch = System.getenv('SNAPSHOT_BRANCH')
+if(snapshotBranch != null) {
+    if(snapshotBranch.startsWith('refs/heads/'))
+        snapshotBranch = snapshotBranch.substring('refs/heads/'.length())
+    maven_version = snapshotBranch.replaceAll('[^.\\w-]', '-') + '-SNAPSHOT'
+    logger.lifecycle('Using SNAPSHOT version `{}`', version)
+}
+
+// pass `-PprismVersion=foo` to set the version directly. Useful for publishing to the local maven repository
+if(hasProperty('prismVersion')) {
+    maven_version = prismVersion
+}
+
+
+allprojects {
+    version = maven_version
+}
+
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        api 'org.jetbrains.kotlin:kotlin-stdlib'
+        api 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.0-M1'
+        testCompile 'com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0'
+    }
+
+    compileKotlin {
+        kotlinOptions {
+            jvmTarget = '1.8'
+            javaParameters = true
+            freeCompilerArgs += '-Xjvm-default=all'
+        }
+    }
+
+    compileTestKotlin {
+        kotlinOptions {
+            jvmTarget = '1.8'
+            javaParameters = true
+            freeCompilerArgs += '-Xjvm-default=all'
+        }
+    }
+
+    compileJava {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        options.compilerArgs.add('-parameters')
+    }
+
+    compileTestJava {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        options.compilerArgs.add('-parameters')
+    }
+}
+

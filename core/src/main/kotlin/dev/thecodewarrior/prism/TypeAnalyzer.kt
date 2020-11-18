@@ -15,29 +15,32 @@ import java.util.concurrent.ConcurrentLinkedQueue
  *
  * Well-built analyzers should be thread safe, however the [TypeReader] and [TypeWriter] objects they return may not be.
  */
-abstract class TypeAnalyzer<T: Any, R: TypeReader<T>, W: TypeWriter<T>, S: Serializer<*>>(val prism: Prism<S>, val type: ConcreteTypeMirror) {
+public abstract class TypeAnalyzer<T: Any, R: TypeReader<T>, W: TypeWriter<T>, S: Serializer<*>>(
+    public val prism: Prism<S>,
+    public val type: ConcreteTypeMirror
+) {
     protected abstract fun createReader(): R
     protected abstract fun createWriter(): W
 
     private val readerPool = ConcurrentLinkedQueue<R>()
     private val writerPool = ConcurrentLinkedQueue<W>()
 
-    fun getReader(existing: T?): R {
+    public fun getReader(existing: T?): R {
         val reader = readerPool.poll() ?: createReader()
         reader.load(existing)
         return reader
     }
 
-    fun getWriter(value: T): W {
+    public fun getWriter(value: T): W {
         val writer = writerPool.poll() ?: createWriter()
         writer.load(value)
         return writer
     }
 
-    fun release(reader: R) {
+    public fun release(reader: R) {
         readerPool.add(reader)
     }
-    fun release(writer: W) {
+    public fun release(writer: W) {
         writerPool.add(writer)
     }
 }
@@ -48,21 +51,21 @@ abstract class TypeAnalyzer<T: Any, R: TypeReader<T>, W: TypeWriter<T>, S: Seria
  * the data available. e.g. the user shouldn't have to call out to the type analyzer itself to get a list's element
  * serializer, that should be present in the type reader.
  */
-interface TypeReader<T: Any>: AutoCloseable {
+public interface TypeReader<T: Any>: AutoCloseable {
     /**
      * Load an existing value in preparation for deserialization
      */
-    fun load(existing: T?)
+    public fun load(existing: T?)
 
     /**
      * Apply the read data, producing a new object or mutating and returning the existing object
      */
-    fun apply(): T
+    public fun apply(): T
 
     /**
      * Clears this reader's state and returns it to the [TypeAnalyzer]'s pool
      */
-    fun release()
+    public fun release()
 
     @JvmDefault
     override fun close() {
@@ -75,16 +78,16 @@ interface TypeReader<T: Any>: AutoCloseable {
  * should ideally have all the information needed to serialize the data available. e.g. the user shouldn't have to call
  * out to the type analyzer itself to get a list's element serializer, that should be present in the type writer.
  */
-interface TypeWriter<T: Any>: AutoCloseable {
+public interface TypeWriter<T: Any>: AutoCloseable {
     /**
      * Load a value in preparation for serialization
      */
-    fun load(value: T) {}
+    public fun load(value: T) {}
 
     /**
      * Clears the writer's state and returns it to the [TypeAnalyzer]'s pool
      */
-    fun release()
+    public fun release()
 
     @JvmDefault
     override fun close() {

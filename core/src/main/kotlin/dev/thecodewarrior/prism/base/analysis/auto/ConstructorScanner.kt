@@ -7,7 +7,7 @@ import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.annotation.RefractConstructor
 import dev.thecodewarrior.prism.utils.annotation
 
-object ConstructorScanner {
+internal object ConstructorScanner {
 
     fun findConstructor(type: ClassMirror, properties: List<ObjectProperty<*>>): ObjectConstructor? {
         val propertyMap = properties.associateBy { it.name }
@@ -48,14 +48,14 @@ object ConstructorScanner {
         }
 
         if(constructors.size > 1)
-            throw ObjectAnalysisException("${type.simpleName} has multiple @RefractConstructor annoteated constructors")
+            throw ObjectAnalysisException("${type.simpleName} has multiple @RefractConstructor annotated constructors")
 
         return constructors.firstOrNull()
     }
 }
 
-class ObjectConstructor(val mirror: ConstructorMirror, val parameters: List<String>) {
-    fun createInstance(values: Array<Any?>): Any {
+public class ObjectConstructor(public val mirror: ConstructorMirror, public val parameters: List<String>) {
+    public fun createInstance(values: Array<Any?>): Any {
         return mirror(*values)
     }
 }

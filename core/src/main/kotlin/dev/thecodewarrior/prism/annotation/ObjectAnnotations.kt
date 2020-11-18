@@ -7,7 +7,10 @@ package dev.thecodewarrior.prism.annotation
  * Marks a class to be automatically (de)serialized
  */
 @Target(AnnotationTarget.CLASS)
-annotation class RefractClass
+public annotation class RefractClass
+
+@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
+public annotation class RefractTargets(vararg val targets: String)
 
 /**
  * Marks a field or Kotlin property to be automatically (de)serialized. This annotation is only effective in classes
@@ -16,7 +19,7 @@ annotation class RefractClass
  * @param value override the property name. If this is blank the name of the underlying field/property is used.
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
-annotation class Refract(val value: String = "")
+public annotation class Refract(val value: String = "")
 
 /**
  * Marks a method as a property getter to be automatically (de)serialized. This annotation is only effective in
@@ -28,7 +31,7 @@ annotation class Refract(val value: String = "")
  * error if such a method could not be found.
  */
 @Target(AnnotationTarget.FUNCTION)
-annotation class RefractGetter(val value: String, val autoDetectSetter: Boolean = false)
+public annotation class RefractGetter(val value: String, val autoDetectSetter: Boolean = false)
 
 /**
  * Marks a method as a property setter to be automatically (de)serialized. This annotation is only effective in
@@ -37,7 +40,7 @@ annotation class RefractGetter(val value: String, val autoDetectSetter: Boolean 
  * @param value the property name. Used for deserialization and to match it with a [RefractGetter] method.
  */
 @Target(AnnotationTarget.FUNCTION)
-annotation class RefractSetter(val value: String)
+public annotation class RefractSetter(val value: String)
 
 /**
  * Marks a constructor to be used by Prism to create instances of this class. This annotation is only effective in
@@ -47,24 +50,24 @@ annotation class RefractSetter(val value: String)
  * parameters are used.
  */
 @Target(AnnotationTarget.CONSTRUCTOR)
-annotation class RefractConstructor(val value: Array<String> = [])
+public annotation class RefractConstructor(val value: Array<String> = [])
 
 /**
  * Marks a Kotlin data class to be serialized
  */
 @Target(AnnotationTarget.CLASS)
-annotation class RefractData
+public annotation class RefractData
 
 /**
  * Marks a property as mutable, allowing Prism to modify it even if the underlying field is `final`. Adding this
  * annotation to an already mutable property or at the same time as [RefractImmutable] is considered an error.
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
-annotation class RefractMutable
+public annotation class RefractMutable
 
 /**
  * Marks a property as immutable, disallowing Prism from modify it even if it is normally mutable. Adding this
  * annotation to an already immutable property or at the same time as [RefractMutable] is considered an error.
  */
 @Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
-annotation class RefractImmutable
+public annotation class RefractImmutable

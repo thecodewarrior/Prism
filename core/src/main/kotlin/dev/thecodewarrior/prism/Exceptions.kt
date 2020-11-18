@@ -1,10 +1,10 @@
 package dev.thecodewarrior.prism
 
-open class PrismException: RuntimeException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public open class PrismException: RuntimeException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
 /**
@@ -12,11 +12,11 @@ open class PrismException: RuntimeException {
  * This is distinct from [InvalidTypeException], which is thrown when a type is for some reason unserializable (e.g. it
  * isn't concrete, there's no valid constructor, etc.).
  */
-class IllegalTypeException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class IllegalTypeException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
 /**
@@ -24,51 +24,51 @@ class IllegalTypeException: PrismException {
  * This is distinct from [IllegalTypeException], which is thrown when something is passed an inappropriate type (e.g.
  * passing the `String` type to a `ListAnalyzer`).
  */
-class InvalidTypeException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class InvalidTypeException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
 /**
  * Thrown when an object instantiation is needed but the serializer is unable to do so. This is not thrown to wrap
  * exceptions thrown in constructors, it is specifically for errors when determining _how_ to instantiate an object.
  */
-class InstantiationException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class InstantiationException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
 /**
  * Thrown when the object analyzer encounters an error occurs getting or setting a property's value
  */
-class PropertyAccessException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class PropertyAccessException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
-class SerializerNotFoundException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class SerializerNotFoundException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
-class DeserializationException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class DeserializationException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }
 
-class SerializationException: PrismException {
-    constructor(): super()
-    constructor(message: String?): super(message)
-    constructor(message: String?, cause: Throwable?): super(message, cause)
-    constructor(cause: Throwable?): super(cause)
+public class SerializationException: PrismException {
+    public constructor(): super()
+    public constructor(message: String?): super(message)
+    public constructor(message: String?, cause: Throwable?): super(message, cause)
+    public constructor(cause: Throwable?): super(cause)
 }

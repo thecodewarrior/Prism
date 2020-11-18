@@ -6,17 +6,17 @@ import dev.thecodewarrior.mirror.type.WildcardMirror
 import dev.thecodewarrior.prism.internal.unmodifiableView
 import java.lang.IllegalArgumentException
 
-class Prism<T: Serializer<*>> {
+public class Prism<T: Serializer<*>> {
     private val _serializers = mutableMapOf<TypeMirror, Lazy<T>>()
-    val serializers: Map<TypeMirror, Lazy<T>> = _serializers.unmodifiableView()
+    public val serializers: Map<TypeMirror, Lazy<T>> = _serializers.unmodifiableView()
 
     private val _factories = mutableListOf<SerializerFactory<T>>()
-    val factories: List<SerializerFactory<T>> = _factories.unmodifiableView()
+    public val factories: List<SerializerFactory<T>> = _factories.unmodifiableView()
 
-    operator fun get(mirror: TypeMirror): Lazy<T> {
+    public operator fun get(mirror: TypeMirror): Lazy<T> {
         @Suppress("NAME_SHADOWING")
         val mirror =
-            if(mirror is WildcardMirror) {
+            if(mirror is WildcardMirror) { // todo: VariableMirror isn't valid either
                 mirror.upperBound ?: throw InvalidTypeException("Wildcard $mirror can't be serialized since it has no upper bound")
             } else {
                 mirror
@@ -53,7 +53,7 @@ class Prism<T: Serializer<*>> {
         return lazy
     }
 
-    fun register(vararg factories: SerializerFactory<T>): Prism<T> {
+    public fun register(vararg factories: SerializerFactory<T>): Prism<T> {
         factories.forEach { factory ->
             _factories.removeIf { it === factory }
             _factories.add(factory)
@@ -61,7 +61,7 @@ class Prism<T: Serializer<*>> {
         return this
     }
 
-    fun register(vararg serializers: T): Prism<T> {
+    public fun register(vararg serializers: T): Prism<T> {
         serializers.forEach { serializer ->
             if(serializer.type in _serializers)
                 throw IllegalArgumentException("Duplicate serializer for ${serializer.type}")

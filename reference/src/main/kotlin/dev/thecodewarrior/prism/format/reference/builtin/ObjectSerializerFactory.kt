@@ -30,7 +30,10 @@ open class ObjectSerializerFactory(prism: ReferencePrism): ReferenceSerializerFa
             analyzer.getReader(existing).use { reader ->
                 reader.properties.forEach { property ->
                     node[property.name]?.also {
-                        property.value = property.serializer.read(it, property.existing)
+                        if(it == NullNode)
+                            property.value = null
+                        else
+                            property.value = property.serializer.read(it, property.existing)
                     }
                 }
                 return reader.apply()

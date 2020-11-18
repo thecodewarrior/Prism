@@ -3,6 +3,7 @@ package dev.thecodewarrior.prism.base.analysis.auto
 import dev.thecodewarrior.prism.PropertyAccessException
 import dev.thecodewarrior.prism.Serializer
 import dev.thecodewarrior.prism.TypeWriter
+import dev.thecodewarrior.prism.annotation.RefractTargets
 import dev.thecodewarrior.prism.internal.unmodifiableView
 import java.lang.IllegalStateException
 
@@ -12,6 +13,7 @@ interface ObjectWriter<T: Any, S: Serializer<*>>: TypeWriter<T> {
 
     interface Property<S: Serializer<*>> {
         val name: String
+        val targets: Set<String>
         val serializer: S
         val value: Any?
     }
@@ -41,6 +43,10 @@ internal class ObjectWriterImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
 
     inner class Property(private val property: ObjectProperty<S>): ObjectWriter.Property<S> {
         override val name: String = property.name
+        override val targets: Set<String> =
+            property.annotations
+                .flatMap { (it as? RefractTargets)?.targets?.toList() ?: emptyList() }
+                .toSet().unmodifiableView()
         override val serializer: S
             get() = property.serializer
 

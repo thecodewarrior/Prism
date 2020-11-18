@@ -10,10 +10,10 @@ import dev.thecodewarrior.prism.TypeReader
 import dev.thecodewarrior.prism.TypeWriter
 import dev.thecodewarrior.prism.internal.unmodifiableView
 
-class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
+public class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirror)
     : TypeAnalyzer<T, ObjectReader<T, S>, ObjectWriter<T, S>, S>(prism, type)  {
-    val properties: List<ObjectProperty<S>>
-    val constructor: ObjectConstructor?
+    public val properties: List<ObjectProperty<S>>
+    public val constructor: ObjectConstructor?
 
     init {
         // TODO: enforce that the iteration order here is stable
@@ -25,7 +25,7 @@ class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirro
     override fun createReader(): ObjectReader<T, S> = ObjectReaderImpl(this)
     override fun createWriter(): ObjectWriter<T, S> = ObjectWriterImpl(this)
 
-    companion object {
+    public companion object {
         private val _nullableAnnotations: MutableList<String> = mutableListOf(
             "org.jetbrains.annotations.Nullable",
             "javax.annotation.Nullable",
@@ -53,10 +53,10 @@ class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirro
             "com.android.annotations.NonNull"
         )
 
-        val nullableAnnotations: List<String> = _nullableAnnotations.unmodifiableView()
-        val notNullAnnotations: List<String> = _notNullAnnotations.unmodifiableView()
+        public val nullableAnnotations: List<String> = _nullableAnnotations.unmodifiableView()
+        public val notNullAnnotations: List<String> = _notNullAnnotations.unmodifiableView()
 
-        fun registerNullableAnnotation(qualifiedName: String) {
+        public fun registerNullableAnnotation(qualifiedName: String) {
             _nullableAnnotations.add(qualifiedName)
             try {
                 _nullableAnnotationClasses.add(Class.forName(qualifiedName))
@@ -65,7 +65,7 @@ class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirro
             }
         }
 
-        fun registerNotNullAnnotation(qualifiedName: String) {
+        public fun registerNotNullAnnotation(qualifiedName: String) {
             _notNullAnnotations.add(qualifiedName)
             try {
                 _notNullAnnotationClasses.add(Class.forName(qualifiedName))
@@ -76,8 +76,8 @@ class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: ClassMirro
 
         private val _nullableAnnotationClasses: MutableList<Class<*>> = mutableListOf()
         private val _notNullAnnotationClasses: MutableList<Class<*>> = mutableListOf()
-        val nullableAnnotationClasses: List<Class<*>> = _nullableAnnotationClasses.unmodifiableView()
-        val notNullAnnotationClasses: List<Class<*>> = _notNullAnnotationClasses.unmodifiableView()
+        public val nullableAnnotationClasses: List<Class<*>> = _nullableAnnotationClasses.unmodifiableView()
+        public val notNullAnnotationClasses: List<Class<*>> = _notNullAnnotationClasses.unmodifiableView()
 
         init {
             _nullableAnnotations.forEach { name ->

@@ -22,7 +22,7 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaMethod
 
-class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirror) {
+internal class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirror) {
     val candidates = mutableMapOf<String, PropertyCandidate>()
     val properties: List<ObjectProperty<S>>
 
@@ -84,16 +84,16 @@ class PropertyScanner<S: Serializer<*>>(val prism: Prism<S>, val type: ClassMirr
     }
 }
 
-abstract class ObjectProperty<S: Serializer<*>>(val name: String, val type: TypeMirror, prism: Prism<S>) {
-    abstract val annotations: List<Annotation>
-    abstract val isImmutable: Boolean
-    abstract fun getValue(target: Any): Any?
-    abstract fun setValue(target: Any, value: Any?)
+public abstract class ObjectProperty<S: Serializer<*>>(public val name: String, public val type: TypeMirror, prism: Prism<S>) {
+    public abstract val annotations: List<Annotation>
+    public abstract val isImmutable: Boolean
+    public abstract fun getValue(target: Any): Any?
+    public abstract fun setValue(target: Any, value: Any?)
 
-    val serializer: S by prism[type]
+    public val serializer: S by prism[type]
 }
 
-class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror: FieldMirror)
+public class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, public val mirror: FieldMirror)
     : ObjectProperty<S>(name, mirror.type, prism) {
     override val annotations: List<Annotation> = mirror.annotations
 
@@ -123,7 +123,7 @@ class FieldProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val mirror:
     }
 }
 
-class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val getter: MethodMirror, val setter: MethodMirror?)
+public class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, public val getter: MethodMirror, public val setter: MethodMirror?)
     : ObjectProperty<S>(name, getter.returnType, prism) {
     override val annotations: List<Annotation> = getter.annotations + setter?.annotations.orEmpty()
 
@@ -141,15 +141,15 @@ class AccessorProperty<S: Serializer<*>>(prism: Prism<S>, name: String, val gett
     }
 }
 
-class KotlinProperty<S: Serializer<*>>(
+public class KotlinProperty<S: Serializer<*>>(
     name: String, type: TypeMirror, prism: Prism<S>,
-    val property: KProperty<*>, val field: FieldMirror?, val getter: MethodMirror?, val setter: MethodMirror?
+    public val property: KProperty<*>, public val field: FieldMirror?, public val getter: MethodMirror?, public val setter: MethodMirror?
 ) : ObjectProperty<S>(name, type, prism) {
     override val annotations: List<Annotation> = mutableListOf<Annotation>().also {
         it.addAll(property.annotations)
-        it.addAll(field?.annotations.orEmpty())
-        it.addAll(getter?.annotations.orEmpty())
-        it.addAll(setter?.annotations.orEmpty())
+        it.addAll(field?.annotations.orEmpty()) // include these?
+        it.addAll(getter?.annotations.orEmpty()) // include these?
+        it.addAll(setter?.annotations.orEmpty()) // include these?
     }.unmodifiableView()
 
     override val isImmutable: Boolean
@@ -189,8 +189,8 @@ class KotlinProperty<S: Serializer<*>>(
         throw AutoSerializationException("Property $property has no setter or backing field, yet was flagged as immutable")
     }
 
-    companion object {
-        fun <S: Serializer<*>> create(prism: Prism<S>, name: String, parentType: ClassMirror, property: KProperty<*>): KotlinProperty<S> {
+    public companion object {
+        public fun <S: Serializer<*>> create(prism: Prism<S>, name: String, parentType: ClassMirror, property: KProperty<*>): KotlinProperty<S> {
             val field = property.javaField?.let { parentType.getField(it) }
             val getter = property.getter.javaMethod?.let { parentType.getMethod(it) }
             val setter = (property as? KMutableProperty<*>)?.setter?.javaMethod?.let { parentType.getMethod(it) }

@@ -8,6 +8,10 @@ import dev.thecodewarrior.mirror.type.TypeMirror
  * one with the most [specific][TypeMirror.specificity] pattern. In the case of equal specificity it chooses the last
  * one registered, in order to support overriding.
  */
-abstract class SerializerFactory<T: Serializer<*>>(val prism: Prism<T>, val pattern: TypeMirror, val predicate: ((TypeMirror) -> Boolean)? = null) {
-    abstract fun create(mirror: TypeMirror): T
+public abstract class SerializerFactory<T: Serializer<*>>(
+    public val prism: Prism<T>,
+    public val pattern: TypeMirror,
+    public val predicate: ((TypeMirror) -> Boolean)? = null
+) {
+    public abstract fun create(mirror: TypeMirror): T
 }

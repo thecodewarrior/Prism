@@ -12,15 +12,15 @@ import dev.thecodewarrior.prism.TypeWriter
 import java.lang.IndexOutOfBoundsException
 import java.util.Arrays
 
-class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
+public class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
     : TypeAnalyzer<Array<T>, ArrayAnalyzer<T, S>.Reader, ArrayAnalyzer<T, S>.Writer, S>(prism, type) {
-    val elementType: TypeMirror = type.component
+    public val elementType: TypeMirror = type.component
 
     override fun createReader(): Reader = Reader()
     override fun createWriter(): Writer = Writer()
 
-    inner class Reader: TypeReader<Array<T>> {
-        val serializer: S by prism[elementType]
+    public inner class Reader: TypeReader<Array<T>> {
+        public val serializer: S by prism[elementType]
         private var buffer = ArrayList<T?>()
 
         private var existing: Array<T>? = null
@@ -29,7 +29,7 @@ class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
          * Ensures the buffer can contain at least [length] elements, potentially increasing efficiency. This can be
          * used in cases where the element count is known before deserializing.
          */
-        fun reserve(length: Int) {
+        public fun reserve(length: Int) {
             buffer.ensureCapacity(length)
         }
 
@@ -38,7 +38,7 @@ class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
          * can be used in cases where the element count is known before deserializing, and *must* be used if elements
          * are going to be populated using [set].
          */
-        fun padToLength(length: Int) {
+        public fun padToLength(length: Int) {
             while(buffer.size < length)
                 buffer.add(null)
         }
@@ -50,11 +50,11 @@ class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
          *
          * @throws IndexOutOfBoundsException if the index is negative or beyond the capacity set using [padToLength]
          */
-        fun set(index: Int, value: T) {
+        public fun set(index: Int, value: T) {
             buffer[index] = value
         }
 
-        fun add(value: T) {
+        public fun add(value: T) {
             buffer.add(value)
         }
 
@@ -91,9 +91,9 @@ class ArrayAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ArrayMirror)
         }
     }
 
-    inner class Writer: TypeWriter<Array<T>> {
-        val serializer: S by prism[elementType]
-        var elements: List<T> = emptyList()
+    public inner class Writer: TypeWriter<Array<T>> {
+        public val serializer: S by prism[elementType]
+        public var elements: List<T> = emptyList()
             private set
 
         override fun load(value: Array<T>) {

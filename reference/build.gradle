@@ -1,0 +1,6 @@
+group = 'dev.thecodewarrior.prism'
+archivesBaseName = 'reference'
+
+dependencies {
+    implementation project(":core")
+}

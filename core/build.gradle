@@ -1,0 +1,98 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:latest.release'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.+'
+    }
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.jfrog.artifactory'
+
+group = 'dev.thecodewarrior.prism'
+archivesBaseName = 'prism'
+
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+
+    api('dev.thecodewarrior.mirror:mirror:1.0.0b1') {
+        exclude group: 'org.jetbrains.kotlin'
+    }
+}
+
+kotlin {
+    explicitApi = 'warning'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+jar.dependsOn sourcesJar
+
+publishing {
+    publications {
+        create('maven', MavenPublication) {
+            groupId = 'dev.thecodewarrior.prism'
+            artifactId = 'prism'
+            version = project.version
+
+            artifact sourcesJar
+            from components.java
+
+            pom {
+                name = 'Prism'
+                description = 'Format-agnostic automatic serialization backbone for Java'
+                url = 'http://github.com/thecodewarrior/Prism'
+                licenses {
+                    license {
+                        name = 'BSD 2-Clause'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/thecodewarrior/Prism.git'
+                    developerConnection = 'scm:git:ssh://github.com/thecodewarrior/Prism.git'
+                    url = 'https://github.com/thecodewarrior/Prism'
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_API_KEY')
+    publications = ['maven']
+    pkg {
+        repo = 'thecodewarrior' // this is the repository we created in step -1
+        name = 'prism' // update info as needed
+        desc = project.description
+        labels = ['java', 'reflection']
+        licenses = ['BSD 2-Clause']
+
+        websiteUrl = 'https://github.com/thecodewarrior/Prism'
+        githubRepo = 'thecodewarrior/Prism'
+        vcsUrl = 'https://github.com/thecodewarrior/Prism.git'
+        issueTrackerUrl = 'https://github.com/thecodewarrior/Prism/issues'
+    }
+}
+
+artifactory {
+    setContextUrl 'https://oss.jfrog.org'
+    publish {
+        repository {
+            repoKey = project.version.endsWith('-SNAPSHOT') ? 'oss-snapshot-local' : 'oss-release-local'
+            username = System.getenv('BINTRAY_USER')
+            password = System.getenv('BINTRAY_API_KEY')
+            maven = true
+        }
+        defaults {
+            publications 'maven'
+        }
+    }
+    clientConfig.info.setBuildNumber(System.getenv('ARTIFACTORY_BUILD_NUMBER')) // no env = null = default value
+}
