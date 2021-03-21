@@ -1,23 +1,11 @@
-package dev.thecodewarrior.prism.base.analysis.auto
+package dev.thecodewarrior.prism.base.analysis.impl
 
 import dev.thecodewarrior.prism.PropertyAccessException
 import dev.thecodewarrior.prism.Serializer
-import dev.thecodewarrior.prism.TypeWriter
-import dev.thecodewarrior.prism.annotation.RefractTargets
+import dev.thecodewarrior.prism.base.analysis.ObjectAnalyzer
+import dev.thecodewarrior.prism.base.analysis.ObjectWriter
 import dev.thecodewarrior.prism.internal.unmodifiableView
 import java.lang.IllegalStateException
-
-interface ObjectWriter<T: Any, S: Serializer<*>>: TypeWriter<T> {
-    val properties: List<Property<S>>
-    fun getProperty(name: String): Property<S>?
-
-    interface Property<S: Serializer<*>> {
-        val name: String
-        val targets: Set<String>
-        val serializer: S
-        val value: Any?
-    }
-}
 
 internal class ObjectWriterImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAnalyzer<T, S>): ObjectWriter<T, S> {
     override val properties: List<Property> = analyzer.properties.map { Property(it) }.unmodifiableView()
@@ -41,12 +29,8 @@ internal class ObjectWriterImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
         analyzer.release(this)
     }
 
-    inner class Property(private val property: ObjectProperty<S>): ObjectWriter.Property<S> {
+    inner class Property(val property: ObjectProperty<S>): ObjectWriter.Property<S> {
         override val name: String = property.name
-        override val targets: Set<String> =
-            property.annotations
-                .flatMap { (it as? RefractTargets)?.targets?.toList() ?: emptyList() }
-                .toSet().unmodifiableView()
         override val serializer: S
             get() = property.serializer
 

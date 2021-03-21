@@ -1,13 +1,12 @@
 package dev.thecodewarrior.prism.format.reference.builtin.auto;
 
 import dev.thecodewarrior.prism.annotation.Refract;
-import dev.thecodewarrior.prism.annotation.RefractClass;
 import dev.thecodewarrior.prism.annotation.RefractGetter;
 import dev.thecodewarrior.prism.annotation.RefractSetter;
 
 import java.util.List;
 
-@RefractClass
+@Refract
 public class AutoSerializedType {
     // Prism can access private fields
     @Refract private List<String> plainField;

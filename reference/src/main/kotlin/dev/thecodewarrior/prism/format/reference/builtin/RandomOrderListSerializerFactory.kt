@@ -9,10 +9,8 @@ import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializerFactory
 import dev.thecodewarrior.prism.format.reference.format.ArrayNode
-import dev.thecodewarrior.prism.format.reference.format.NullNode
 import dev.thecodewarrior.prism.format.reference.format.ObjectNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
-import java.util.Random
 
 open class RandomOrderListSerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<List<*>>()) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
@@ -39,7 +37,7 @@ open class RandomOrderListSerializerFactory(prism: ReferencePrism): ReferenceSer
                         throw DeserializationException("Error deserializing entry $i", e)
                     }
                 }
-                return reader.apply()
+                return reader.build()
             }
         }
 

@@ -4,8 +4,8 @@ import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.DeserializationException
-import dev.thecodewarrior.prism.annotation.RefractClass
-import dev.thecodewarrior.prism.base.analysis.auto.ObjectAnalyzer
+import dev.thecodewarrior.prism.annotation.Refract
+import dev.thecodewarrior.prism.base.analysis.ObjectAnalyzer
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializerFactory
@@ -14,7 +14,7 @@ import dev.thecodewarrior.prism.format.reference.format.ObjectNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
 
 open class ObjectSerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<Any>(), {
-    (it as? ClassMirror)?.annotations?.any { it is RefractClass } == true
+    (it as? ClassMirror)?.annotations?.any { it is Refract } == true
 }) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
         return ObjectSerializer(prism, mirror)
@@ -31,12 +31,12 @@ open class ObjectSerializerFactory(prism: ReferencePrism): ReferenceSerializerFa
                 reader.properties.forEach { property ->
                     node[property.name]?.also {
                         if(it == NullNode)
-                            property.value = null
+                            property.setValue(null)
                         else
-                            property.value = property.serializer.read(it, property.existing)
+                            property.setValue(property.serializer.read(it, property.existing))
                     }
                 }
-                return reader.apply()
+                return reader.build()
             }
         }
 

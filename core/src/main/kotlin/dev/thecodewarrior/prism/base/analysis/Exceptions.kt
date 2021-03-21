@@ -1,9 +1,9 @@
-package dev.thecodewarrior.prism.base.analysis.auto
+package dev.thecodewarrior.prism.base.analysis
 
 import dev.thecodewarrior.prism.PrismException
 
 /**
- * Errors that occur while analyzing an object class. Distinct [AutoSerializationException], which is for errors that
+ * Errors that occur while analyzing an object class. Distinct from [AutoSerializationException], which is for errors that
  * occur at runtime.
  */
 public open class ObjectAnalysisException: PrismException {

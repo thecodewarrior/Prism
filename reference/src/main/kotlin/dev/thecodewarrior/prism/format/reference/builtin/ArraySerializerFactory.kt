@@ -35,7 +35,7 @@ open class ArraySerializerFactory(prism: ReferencePrism): ReferenceSerializerFac
                         throw DeserializationException("Error deserializing element $i", e)
                     }
                 }
-                return reader.apply()
+                return reader.build()
             }
         }
 

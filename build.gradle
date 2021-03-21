@@ -43,6 +43,7 @@ subprojects {
             jvmTarget = '1.8'
             javaParameters = true
             freeCompilerArgs += '-Xjvm-default=all'
+            freeCompilerArgs += '-Xopt-in=kotlin.contracts.ExperimentalContracts'
         }
     }
 

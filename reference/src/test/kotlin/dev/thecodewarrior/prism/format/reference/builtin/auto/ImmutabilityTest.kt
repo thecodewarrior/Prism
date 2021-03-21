@@ -5,7 +5,6 @@ import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.InstantiationException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
-import dev.thecodewarrior.prism.annotation.RefractClass
 import dev.thecodewarrior.prism.annotation.RefractConstructor
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
@@ -71,7 +70,7 @@ internal class ImmutabilityTest: PrismTest() {
     /** An object that is created in the serializer only if [value] needs to change */
     private data class SmartType(val value: Int)
 
-    @RefractClass
+    @Refract
     private data class MutableFieldImmutableType(private var _field: ImmutableType) {
         var setterCalls = 0
         @Refract
@@ -97,7 +96,7 @@ internal class ImmutabilityTest: PrismTest() {
     }
 
 
-    @RefractClass
+    @Refract
     private data class MutableFieldSmartType(private var _field: SmartType) {
         var setterCalls = 0
         @Refract
@@ -135,7 +134,7 @@ internal class ImmutabilityTest: PrismTest() {
         assertEquals(0, deserialized.setterCalls)
     }
 
-    @RefractClass
+    @Refract
     private data class ImmutableFieldImmutableType(private var _field: ImmutableType) {
         @Refract
         val field: ImmutableType
@@ -155,7 +154,7 @@ internal class ImmutabilityTest: PrismTest() {
             .assertCause<InstantiationException>().assertMessage("No instantiators exist")
     }
 
-    @RefractClass
+    @Refract
     private data class ImmutableFieldSmartType(private var _field: SmartType) {
         @Refract
         val field: SmartType
@@ -186,7 +185,7 @@ internal class ImmutabilityTest: PrismTest() {
         deserialized as ImmutableFieldSmartType
         assertSame(original.field, deserialized.field)
     }
-    @RefractClass
+    @Refract
     private data class PostMutateOrder @RefractConstructor constructor(@Refract val field: Int) {
         @Refract
         var someProperty: Int = 0

@@ -2,7 +2,7 @@ package dev.thecodewarrior.prism.format.reference.builtin.auto
 
 import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.prism.Prism
-import dev.thecodewarrior.prism.annotation.RefractClass
+import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.FallbackSerializerFactory
@@ -20,7 +20,7 @@ internal class BaseObjectTest: PrismTest() {
     }
 
     private class NonAnnotatedClass
-    @RefractClass
+    @Refract
     private class AnnotatedClass
 
     @Test

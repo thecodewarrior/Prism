@@ -2,19 +2,15 @@ package dev.thecodewarrior.prism.format.reference.builtin
 
 import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.mirror.type.ArrayMirror
-import dev.thecodewarrior.mirror.type.ClassMirror
 import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.base.analysis.ArrayAnalyzer
-import dev.thecodewarrior.prism.base.analysis.ListAnalyzer
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializerFactory
 import dev.thecodewarrior.prism.format.reference.format.ArrayNode
-import dev.thecodewarrior.prism.format.reference.format.NullNode
 import dev.thecodewarrior.prism.format.reference.format.ObjectNode
 import dev.thecodewarrior.prism.format.reference.format.RefNode
-import java.util.Random
 
 open class RandomOrderArraySerializerFactory(prism: ReferencePrism): ReferenceSerializerFactory(prism, Mirror.reflect<Array<*>>()) {
     override fun create(mirror: TypeMirror): ReferenceSerializer<*> {
@@ -41,7 +37,7 @@ open class RandomOrderArraySerializerFactory(prism: ReferencePrism): ReferenceSe
                         throw DeserializationException("Error deserializing entry $i", e)
                     }
                 }
-                return reader.apply()
+                return reader.build()
             }
         }
 

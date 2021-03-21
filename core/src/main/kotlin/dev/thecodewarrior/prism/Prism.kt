@@ -15,12 +15,10 @@ public class Prism<T: Serializer<*>> {
 
     public operator fun get(mirror: TypeMirror): Lazy<T> {
         @Suppress("NAME_SHADOWING")
-        val mirror =
-            if(mirror is WildcardMirror) { // todo: VariableMirror isn't valid either
-                mirror.upperBound ?: throw InvalidTypeException("Wildcard $mirror can't be serialized since it has no upper bound")
-            } else {
-                mirror
-            }
+        if(mirror !is ConcreteTypeMirror) {
+            throw InvalidTypeException("${mirror.javaClass.simpleName} `$mirror` can't be serialized. " +
+                "Only concrete types (or type variables specialized to be concrete types) can be serialized")
+        }
 
         _serializers[mirror]?.also {
             return it
@@ -30,8 +28,6 @@ public class Prism<T: Serializer<*>> {
             _serializers[mirror] = it
             return it
         }
-
-        mirror as ConcreteTypeMirror
 
         val factory = _factories.fold<SerializerFactory<T>, SerializerFactory<T>?>(null) { acc, factory ->
             val applicable = factory.pattern.isAssignableFrom(mirror) && factory.predicate?.invoke(mirror) != false
@@ -50,6 +46,7 @@ public class Prism<T: Serializer<*>> {
 
         val lazy = lazy { factory.create(mirror) }
         _serializers[mirror] = lazy
+        lazy.value
         return lazy
     }
 

@@ -5,9 +5,8 @@ import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.InstantiationException
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
-import dev.thecodewarrior.prism.annotation.RefractClass
 import dev.thecodewarrior.prism.annotation.RefractConstructor
-import dev.thecodewarrior.prism.base.analysis.auto.InvalidRefractSignatureException
+import dev.thecodewarrior.prism.base.analysis.InvalidRefractSignatureException
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
 import dev.thecodewarrior.prism.format.reference.builtin.FallbackSerializerFactory
@@ -29,7 +28,7 @@ internal class ConstructorTest: PrismTest() {
     }
 
     private class NonAnnotatedClass
-    @RefractClass
+    @Refract
     private class AnnotatedClass
 
     @Test
@@ -45,7 +44,7 @@ internal class ConstructorTest: PrismTest() {
         assertSame(Mirror.reflect<AnnotatedClass>(), serializer.type)
     }
 
-    @RefractClass
+    @Refract
     private class NonAnnotatedConstructor {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -65,7 +64,7 @@ internal class ConstructorTest: PrismTest() {
         }.assertCause<InstantiationException>().assertMessage("No instantiators exist")
     }
 
-    @RefractClass
+    @Refract
     private class AnnotatedConstructor @RefractConstructor constructor() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -84,7 +83,7 @@ internal class ConstructorTest: PrismTest() {
         assertEquals(AnnotatedConstructor(), theObject)
     }
 
-    @RefractClass
+    @Refract
     private data class FullConstructor @RefractConstructor constructor(@Refract var refracting: Int)
 
     @Test
@@ -96,7 +95,7 @@ internal class ConstructorTest: PrismTest() {
         assertEquals(theObject, theDeserializedObject)
     }
 
-    @RefractClass
+    @Refract
     private data class ConstructorAnnotationNames(@Refract var refracting: Int, var unused: Int) {
         @RefractConstructor(["refracting"])
         constructor(differentName: Int) : this(differentName, 1)
@@ -111,7 +110,7 @@ internal class ConstructorTest: PrismTest() {
         assertEquals(theObject, theDeserializedObject)
     }
 
-    @RefractClass
+    @Refract
     private data class PartialConstructor(@Refract var refracting: Int, @Refract var secondRefractingField: Int) {
         @RefractConstructor
         constructor(refracting: Int): this(refracting, 2)
@@ -126,7 +125,7 @@ internal class ConstructorTest: PrismTest() {
         assertEquals(theObject, theDeserializedObject)
     }
 
-    @RefractClass
+    @Refract
     private data class MultipleConstructors @RefractConstructor constructor(@Refract var refracting: Int, @Refract var usedPrimary: Boolean) {
         @RefractConstructor
         constructor(refracting: Int): this(refracting, false)
@@ -141,7 +140,7 @@ internal class ConstructorTest: PrismTest() {
         assertEquals(theObject, theDeserializedObject)
     }
 
-    @RefractClass
+    @Refract
     private data class NoAppropriateConstructors @RefractConstructor constructor(@Refract var propA: Int, @Refract var propB: Int) {
         @Refract var propC: Int = 0
     }
@@ -155,13 +154,13 @@ internal class ConstructorTest: PrismTest() {
         assertEquals(theObject, theDeserializedObject)
     }
 
-    @RefractClass
+    @Refract
     private data class RefractingConstructor(@Refract var refracting: Int, @Refract var secondRefractingField: Int) {
         @RefractConstructor
         constructor(refracting: Int): this(refracting, 2)
     }
 
-    @RefractClass
+    @Refract
     private class MistypedConstructorParameters @RefractConstructor constructor(intField: Int, booleanField: Int) {
         @Refract var intField: Int = 0
         @Refract var booleanField: Boolean = false
@@ -175,7 +174,7 @@ internal class ConstructorTest: PrismTest() {
             "[booleanField]")
     }
 
-    @RefractClass
+    @Refract
     private class SubtypedConstructorParameters @RefractConstructor constructor(intField: Int, listField: ArrayList<String>) {
         @Refract var intField: Int = 0
         @Refract var listField: List<String>? = null
@@ -189,7 +188,7 @@ internal class ConstructorTest: PrismTest() {
             "[listField]")
     }
 
-    @RefractClass
+    @Refract
     private class MisnamedConstructorParameters @RefractConstructor constructor(intField: Int, oopsField: Boolean) {
         @Refract var intField: Int = 0
         @Refract var booleanField: Boolean = false
@@ -202,7 +201,7 @@ internal class ConstructorTest: PrismTest() {
         }.assertMessage("Some constructor parameter names have no corresponding property: [oopsField]")
     }
 
-    @RefractClass
+    @Refract
     private class MisnamedAnnotationParameters @RefractConstructor(["intField", "whoops"]) constructor(arg1: Int, arg2: Boolean) {
         @Refract var intField: Int = 0
         @Refract var booleanField: Boolean = false

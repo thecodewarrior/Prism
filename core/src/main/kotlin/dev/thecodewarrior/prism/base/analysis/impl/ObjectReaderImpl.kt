@@ -1,24 +1,11 @@
-package dev.thecodewarrior.prism.base.analysis.auto
+package dev.thecodewarrior.prism.base.analysis.impl
 
 import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.PropertyAccessException
 import dev.thecodewarrior.prism.Serializer
-import dev.thecodewarrior.prism.TypeReader
-import dev.thecodewarrior.prism.annotation.RefractTargets
+import dev.thecodewarrior.prism.base.analysis.ObjectAnalyzer
+import dev.thecodewarrior.prism.base.analysis.ObjectReader
 import dev.thecodewarrior.prism.internal.unmodifiableView
-
-interface ObjectReader<T: Any, S: Serializer<*>>: TypeReader<T> {
-    val properties: List<Property<S>>
-    fun getProperty(name: String): Property<S>?
-
-    interface Property<S: Serializer<*>> {
-        val name: String
-        val targets: Set<String>
-        val serializer: S
-        val existing: Any?
-        var value: Any?
-    }
-}
 
 internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAnalyzer<T, S>): ObjectReader<T, S> {
     override val properties: List<Property> = analyzer.properties.map { Property(it) }.unmodifiableView()
@@ -47,7 +34,7 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
         analyzer.release(this)
     }
 
-    override fun apply(): T {
+    override fun build(): T {
         // if any properties are missing:
         //    throw
         // add all mutable properties to the remaining property list
@@ -111,10 +98,6 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
 
     inner class Property(val property: ObjectProperty<S>): ObjectReader.Property<S> {
         override val name: String = property.name
-        override val targets: Set<String> =
-            property.annotations
-                .flatMap { (it as? RefractTargets)?.targets?.toList() ?: emptyList() }
-                .toSet().unmodifiableView()
         override val serializer: S
             get() = property.serializer
 

@@ -35,7 +35,7 @@ open class ListSerializerFactory(prism: ReferencePrism): ReferenceSerializerFact
                         throw DeserializationException("Error deserializing element $i", e)
                     }
                 }
-                return reader.apply()
+                return reader.build()
             }
         }
 

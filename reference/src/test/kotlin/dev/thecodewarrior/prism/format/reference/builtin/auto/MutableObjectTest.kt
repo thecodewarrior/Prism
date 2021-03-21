@@ -3,7 +3,6 @@ package dev.thecodewarrior.prism.format.reference.builtin.auto
 import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.prism.Prism
 import dev.thecodewarrior.prism.annotation.Refract
-import dev.thecodewarrior.prism.annotation.RefractClass
 import dev.thecodewarrior.prism.annotation.RefractConstructor
 import dev.thecodewarrior.prism.format.reference.ReferencePrism
 import dev.thecodewarrior.prism.format.reference.ReferenceSerializer
@@ -23,7 +22,7 @@ internal class MutableObjectTest: PrismTest() {
     }
 
     private class NonAnnotatedClass
-    @RefractClass
+    @Refract
     private class AnnotatedClass
 
     @Test
@@ -39,7 +38,7 @@ internal class MutableObjectTest: PrismTest() {
         assertSame(Mirror.reflect<AnnotatedClass>(), serializer.type)
     }
 
-    @RefractClass
+    @Refract
     private class EmptyObject @RefractConstructor constructor() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -66,7 +65,7 @@ internal class MutableObjectTest: PrismTest() {
         assertSame(theObject, node)
     }
 
-    @RefractClass
+    @Refract
     private class NoRefractingFields {
         val nonRefracting: Int = 0
     }
@@ -78,7 +77,7 @@ internal class MutableObjectTest: PrismTest() {
         assertEquals(ObjectNode(), node)
     }
 
-    @RefractClass
+    @Refract
     private data class RefractingFields(@Refract var refracting: Int)
 
     @Test
