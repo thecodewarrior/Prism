@@ -24,10 +24,6 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
 
     override fun getProperty(name: String): ObjectReader.Property<S>? = propertyMap[name]
 
-    override fun load(existing: T?) {
-        this.existing = existing
-    }
-
     override fun release() {
         properties.forEach { it.clear() }
         existing = null
@@ -78,7 +74,7 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
                 }
             }
             constructorProperties.forEachIndexed { i, property ->
-                constructorParameters[i] = property.value
+                constructorParameters[i] = property.value_
             }
             remaining.removeAll(constructorProperties)
             result = constructor.createInstance(constructorParameters)
@@ -89,7 +85,7 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
 
         remaining.forEach { property ->
             if(!property.property.isImmutable)
-                property.property.setValue(result, property.value)
+                property.property.setValue(result, property.value_)
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -105,7 +101,7 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
         private var _existing: Any? = null
 
         var valueExists = false
-        override var value: Any? = null
+        var value_: Any? = null
             set(value) {
                 field = value
                 valueExists = true
@@ -123,7 +119,7 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
         fun clear() {
             _existing = null
             existingCached = false
-            value = null
+            value_ = null
             valueExists = false
         }
 
@@ -137,10 +133,13 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
 
         fun didChange(): Boolean {
             val existing = existing
-            val value = value
+            val value = value_
             @Suppress("UNCHECKED_CAST")
-            return (existing == null) != (value == null) ||
-                existing != null && value != null && (serializer as Serializer<Any>).didChange(existing, value)
+            return (existing == null) != (value == null)
+        }
+
+        override fun setValue(value: Any?) {
+            TODO("Not yet implemented")
         }
     }
 }

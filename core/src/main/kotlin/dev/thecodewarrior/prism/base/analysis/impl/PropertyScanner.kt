@@ -12,6 +12,7 @@ import dev.thecodewarrior.prism.annotation.RefractSetter
 import dev.thecodewarrior.prism.base.analysis.AnalysisError
 import dev.thecodewarrior.prism.base.analysis.ObjectAnalysisException
 import dev.thecodewarrior.prism.utils.allDeclaredMemberProperties
+import java.lang.RuntimeException
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
@@ -42,12 +43,15 @@ internal object PropertyScanner {
                 candidates[0].createProperty(prism)
             } catch (e: ObjectAnalysisException) {
                 problems.add(AnalysisError("Exception analyzing property named `$name`", e))
+                null
             }
         }
 
-        for (problem in problems) {
-
+        if(problems.isNotEmpty()) {
+            throw RuntimeException()
         }
+
+        return properties
     }
 
     private fun <S: Serializer<*>> scanKotlin(
