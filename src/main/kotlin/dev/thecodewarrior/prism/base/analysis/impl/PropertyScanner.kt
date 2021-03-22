@@ -12,6 +12,7 @@ import dev.thecodewarrior.prism.annotation.RefractSetter
 import dev.thecodewarrior.prism.base.analysis.AnalysisError
 import dev.thecodewarrior.prism.base.analysis.ObjectAnalysisException
 import dev.thecodewarrior.prism.utils.allDeclaredMemberProperties
+import dev.thecodewarrior.prism.utils.annotation
 import java.lang.RuntimeException
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty1
@@ -81,14 +82,14 @@ internal object PropertyScanner {
         val scannedSetters = mutableMapOf<String, MutableList<MethodMirror>>()
 
         for (method in type.methods) {
-            method.getAnnotation<RefractGetter>()?.also { annotation ->
+            method.annotation<RefractGetter>()?.also { annotation ->
                 if (annotation.value == "") {
                     errors.add(AnalysisError("Getter `${method.name}` has an empty @RefractGetter name", null))
                 } else {
                     scannedGetters.getOrPut(annotation.value) { mutableListOf() }.add(method)
                 }
             }
-            method.getAnnotation<RefractSetter>()?.also { annotation ->
+            method.annotation<RefractSetter>()?.also { annotation ->
                 if (annotation.value == "") {
                     errors.add(AnalysisError("Setter `${method.name}` has an empty @RefractSetter name", null))
                 } else {

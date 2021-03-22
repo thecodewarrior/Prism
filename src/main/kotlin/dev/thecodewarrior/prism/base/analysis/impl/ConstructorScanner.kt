@@ -11,7 +11,7 @@ import dev.thecodewarrior.prism.utils.annotation
 internal object ConstructorScanner {
 
     fun findConstructor(type: ClassMirror, properties: List<ObjectProperty<*>>): ObjectConstructor? {
-        val refractConstructors = type.declaredConstructors.filter { it.isAnnotationPresent<RefractConstructor>() }
+        val refractConstructors = type.declaredConstructors.filter { it.annotations.isPresent<RefractConstructor>() }
         if (refractConstructors.isEmpty())
             return null
         if (refractConstructors.size > 1)
@@ -73,6 +73,6 @@ internal object ConstructorScanner {
 
 public class ObjectConstructor(public val mirror: ConstructorMirror, public val parameters: List<String>) {
     public fun createInstance(values: Array<Any?>): Any {
-        return mirror(*values)
+        return mirror.call(*values)
     }
 }

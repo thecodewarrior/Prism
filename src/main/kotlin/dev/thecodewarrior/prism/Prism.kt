@@ -2,6 +2,7 @@ package dev.thecodewarrior.prism
 
 import dev.thecodewarrior.mirror.type.ConcreteTypeMirror
 import dev.thecodewarrior.mirror.type.TypeMirror
+import dev.thecodewarrior.mirror.type.TypeSpecificityComparator
 import dev.thecodewarrior.mirror.type.WildcardMirror
 import dev.thecodewarrior.prism.internal.unmodifiableView
 import java.lang.IllegalArgumentException
@@ -32,8 +33,8 @@ public class Prism<T: Serializer<*>> {
         val factory = _factories.fold<SerializerFactory<T>, SerializerFactory<T>?>(null) { acc, factory ->
             val applicable = factory.pattern.isAssignableFrom(mirror) && factory.predicate?.invoke(mirror) != false
             if (applicable) {
-                val moreSpecific = acc == null || acc.pattern.specificity <= factory.pattern.specificity ||
-                    (acc.predicate == null && factory.predicate != null && acc.pattern.specificity.compareTo(factory.pattern.specificity) == 0)
+                val moreSpecific = acc == null || TypeSpecificityComparator.compare(acc.pattern, factory.pattern) <= 0 ||
+                    (acc.predicate == null && factory.predicate != null && TypeSpecificityComparator.compare(acc.pattern, factory.pattern) == 0)
                 if (moreSpecific)
                     factory
                 else
