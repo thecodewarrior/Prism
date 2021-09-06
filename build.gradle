@@ -2,8 +2,8 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
-    id 'org.jetbrains.dokka' version '1.4.30'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.21'
+    id 'org.jetbrains.dokka' version '1.5.0'
 }
 
 def maven_version = library_version
@@ -95,7 +95,7 @@ publishing {
                 url = 'https://github.com/thecodewarrior/Prism'
                 licenses {
                     license {
-                        name = 'BSD 2-Clause "Simplified" License'
+                        name = 'BSD-2-Clause'
                         url = 'https://opensource.org/licenses/BSD-2-Clause'
                     }
                 }
@@ -108,7 +108,7 @@ publishing {
                 }
                 scm {
                     connection = 'scm:git:https://github.com/thecodewarrior/Prism.git'
-                    developerConnection = 'scm:git:ssh://github.com/thecodewarrior/Prism.git'
+                    developerConnection = 'scm:git:ssh://github.com:thecodewarrior/Prism.git'
                     url = 'https://github.com/thecodewarrior/Prism'
                 }
             }
@@ -129,7 +129,15 @@ publishing {
 }
 
 signing {
-    useGpgCmd()
+    if(System.getenv("SIGNING_KEY") != null) {
+        useInMemoryPgpKeys(
+                System.getenv("SIGNING_KEY_ID"),
+                System.getenv("SIGNING_KEY"),
+                System.getenv("SIGNING_KEY_PASSWORD")
+        )
+    } else {
+        useGpgCmd()
+    }
 
     sign publishing.publications.maven
 }

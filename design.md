@@ -37,3 +37,51 @@ Caused by: com.teamwizardry.prism.InstantiationException: Could not create a new
     at ...
 ```
 
+```
+Error creating serializer for `com.teamwizardry.wizardry.CoolDataContainer` using `com.teamwizardry.librarianlib.NBTObjectSerializerFactory`
+Caused by "property 'data'": Error creating serializer for `java.util.List<com.teamwizardry.wizardry.CoolDataObject>` using `com.teamwizardry.librarianlib.NBTListSerializerFactory`
+Caused by "element type": Error creating serializer for `com.teamwizardry.wizardry.CoolDataObject` using `com.teamwizardry.librarianlib.NBTObjectSerializerFactory`
+Caused by: dev.thecodewarrior.prism.base.analysis.ObjectAnalysisException: Errors scanning properties of `com.teamwizardry.wizardry.CoolDataObject`
+    There are multiple properties named "value":
+        - (field) CoolDataObject.value
+        - (method) CoolDataObject.getValue
+    There are multiple setters named "size":
+        - (method) CoolDataObject.setDataSize
+        - (method) CoolDataParent.setValueSize
+```
+
+```
+Error creating serializer for `com.teamwizardry.wizardry.CoolDataObject` (com.teamwizardry.librarianlib.NBTObjectSerializer)
+Used by "element type" in `java.util.List<com.teamwizardry.wizardry.CoolDataObject>` (com.teamwizardry.librarianlib.NBTListSerializer)
+Used by "property 'data'" in `com.teamwizardry.wizardry.CoolDataContainer` (com.teamwizardry.librarianlib.NBTObjectSerializer)
+Errors:
+    There are multiple properties named "value":
+        - (field) CoolDataObject.value
+        - (method) CoolDataObject.getValue
+    There are multiple setters named "size":
+        - (method) CoolDataObject.setDataSize
+        - (method) CoolDataParent.setValueSize
+```
+
+```
+Error creating serializer for `com.teamwizardry.wizardry.CoolDataObject` (com.teamwizardry.librarianlib.NBTObjectSerializer)
+Used by "element type" in `java.util.List<com.teamwizardry.wizardry.CoolDataObject>` (com.teamwizardry.librarianlib.NBTListSerializer)
+Used by "property 'data'" in `com.teamwizardry.wizardry.CoolDataContainer` (com.teamwizardry.librarianlib.NBTObjectSerializer)
+java.lang.RuntimeException: Some other exception here
+	at com.teamwizardry.librarianlib.NBTObjectSerializer.create(NBTObjectSerializer.kt:143)
+    at ...
+Caused by: ...
+```
+
+```kotlin
+PrismContextException(
+    type = NBTObjectSerializerFactory.class,
+    cause = PrismNamedException(
+        name = "property 'data'",
+        cause = PrismContextException(
+            type = NBTListSerializerFactory.class,
+            cause = ...
+        )
+    )
+)
+```
