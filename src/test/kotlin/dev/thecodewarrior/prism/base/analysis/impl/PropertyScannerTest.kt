@@ -4,8 +4,6 @@ import dev.thecodewarrior.mirror.Mirror
 import dev.thecodewarrior.mirror.type.TypeMirror
 import dev.thecodewarrior.prism.annotation.Refract
 import dev.thecodewarrior.prism.annotation.RefractGetter
-import dev.thecodewarrior.prism.annotation.RefractImmutable
-import dev.thecodewarrior.prism.annotation.RefractMutable
 import dev.thecodewarrior.prism.testsupport.IdentityPrism
 import dev.thecodewarrior.prism.testsupport.IdentitySerializer
 import dev.thecodewarrior.prism.testsupport.assertInstanceOf
@@ -283,127 +281,6 @@ internal class PropertyScannerTest: ReflectTest(
             ),
         )
     }
-
-    // # @RefractImmutable
-    @Test
-    fun `adding '@RefractImmutable' to a non-final field should mark the resulting property as immutable`() {
-        val X by sources.add(
-            "X", """
-            class X {
-                @RefractImmutable @Refract("field") int field = 0;
-            }
-            """.trimIndent()
-        )
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X))
-        assertEquals(1, properties.size)
-        assertTrue(properties[0].isImmutable)
-    }
-
-    @Test
-    fun `adding '@RefractImmutable' to a final field should throw an error`() {
-        val X by sources.add(
-            "X", """
-            class X {
-                @RefractImmutable @Refract("field") final int field = 0;
-            }
-            """.trimIndent()
-        )
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X))
-    }
-
-    @Test
-    fun `adding '@RefractImmutable' to a kotlin 'var' should mark the resulting property as immutable`() {
-        class X {
-            @RefractImmutable
-            @Refract("property")
-            var property: Int = 0
-        }
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X::class.java))
-        assertEquals(1, properties.size)
-        assertTrue(properties[0].isImmutable)
-    }
-
-    @Test
-    fun `adding '@RefractImmutable' to a kotlin 'val' should throw an error`() {
-        class X {
-            @RefractImmutable
-            @Refract("property")
-            val property: Int = 0
-        }
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X::class.java))
-    }
-
-    // # @RefractMutable
-    @Test
-    fun `adding '@RefractMutable' to a final field should mark the resulting property as mutable`() {
-        val X by sources.add(
-            "X", """
-            class X {
-                @RefractMutable @Refract("field") final int field = 0;
-            }
-            """.trimIndent()
-        )
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X))
-        assertEquals(1, properties.size)
-        assertFalse(properties[0].isImmutable)
-    }
-
-    @Test
-    fun `adding '@RefractMutable' to a non-final field should throw an error`() {
-        val X by sources.add(
-            "X", """
-            class X {
-                @RefractMutable @Refract("field") int field = 0;
-            }
-            """.trimIndent()
-        )
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X))
-    }
-
-    @Test
-    fun `adding '@RefractMutable' to a kotlin 'val' with a backing field should return a HybridMutableProperty`() {
-        class X {
-            @RefractMutable
-            @Refract("property")
-            val property: Int = 0
-        }
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X::class.java))
-        assertEquals(1, properties.size)
-        assertInstanceOf<HybridMutableProperty<*>>(properties[0])
-        assertFalse(properties[0].isImmutable)
-    }
-
-    @Test
-    fun `adding '@RefractMutable' to a kotlin 'val' without a backing field should throw an error`() {
-        class X {
-            @RefractMutable
-            @Refract("property")
-            val property: Int
-                get() = 0
-        }
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X::class.java))
-    }
-
-    @Test
-    fun `adding '@RefractMutable' to a kotlin 'var' should throw an error`() {
-        class X {
-            @RefractMutable
-            @Refract("property")
-            var property: Int = 0
-        }
-        sources.compile()
-        val properties = PropertyScanner.scan(IdentityPrism, Mirror.reflectClass(X::class.java))
-    }
-
-    // adding both RefractMutable and RefractImmutable should throw an error
 
     // static fields/methods should throw
 

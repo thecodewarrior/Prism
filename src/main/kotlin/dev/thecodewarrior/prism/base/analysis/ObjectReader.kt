@@ -35,11 +35,6 @@ public interface ObjectReader<T: Any, S: Serializer<*>>: TypeReader<T> {
         public val serializer: S
 
         /**
-         * The existing value, if there was one
-         */
-        public val existing: Any?
-
-        /**
          * Sets the deserialized value.
          */
         public fun setValue(value: Any?)

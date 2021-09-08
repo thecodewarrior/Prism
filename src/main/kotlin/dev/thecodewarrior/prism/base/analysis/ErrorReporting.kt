@@ -5,6 +5,8 @@ import kotlin.contracts.contract
 
 public class AnalysisError(public val message: String, public val cause: Throwable?)
 
+
+
 public sealed class AnalysisResult<T> {
     public class Success<T>(public val value: T): AnalysisResult<T>()
     public class Error<T>(public val errors: List<AnalysisError>): AnalysisResult<T>()

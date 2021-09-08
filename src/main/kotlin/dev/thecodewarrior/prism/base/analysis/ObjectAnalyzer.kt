@@ -15,7 +15,7 @@ public class ObjectAnalyzer<T: Any, S: Serializer<*>>(prism: Prism<S>, type: Cla
     : TypeAnalyzer<T, ObjectReader<T, S>, ObjectWriter<T, S>, S>(prism, type)  {
     internal val properties: List<ObjectProperty<S>> = PropertyScanner.scan(prism, type)
         @JvmSynthetic get
-    internal val constructor: ObjectConstructor? = ConstructorScanner.findConstructor(type, properties)
+    internal val constructor: ObjectConstructor = ConstructorScanner.findConstructor(type, properties)
         @JvmSynthetic get
 
     override fun createReader(): ObjectReader<T, S> = ObjectReaderImpl(this)

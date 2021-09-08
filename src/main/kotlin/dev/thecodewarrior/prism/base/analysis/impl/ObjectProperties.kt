@@ -42,23 +42,3 @@ internal class AccessorProperty<S: Serializer<*>>(
         setter.call<Unit>(target, value)
     }
 }
-
-/**
- * Used for Kotlin `@RefractMutable` properties that have custom getters but, because they're `val`s, have no setters.
- */
-internal class HybridMutableProperty<S: Serializer<*>>(
-    name: String,
-    type: TypeMirror,
-    prism: Prism<S>,
-    private val getter: MethodMirror,
-    private val mutableField: FieldMirror
-): ObjectProperty<S>(name, type, prism, false) {
-
-    override fun getValue(target: Any): Any? {
-        return getter.call(target)
-    }
-
-    override fun setValue(target: Any, value: Any?) {
-        mutableField.set(target, value)
-    }
-}

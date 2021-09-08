@@ -2,6 +2,7 @@ package dev.thecodewarrior.prism.base.analysis.impl
 
 import dev.thecodewarrior.mirror.member.ConstructorMirror
 import dev.thecodewarrior.mirror.type.ClassMirror
+import dev.thecodewarrior.prism.DeserializationException
 import dev.thecodewarrior.prism.annotation.RefractConstructor
 import dev.thecodewarrior.prism.base.analysis.InvalidRefractAnnotationException
 import dev.thecodewarrior.prism.base.analysis.InvalidRefractSignatureException
@@ -10,10 +11,11 @@ import dev.thecodewarrior.prism.utils.annotation
 
 internal object ConstructorScanner {
 
-    fun findConstructor(type: ClassMirror, properties: List<ObjectProperty<*>>): ObjectConstructor? {
+    fun findConstructor(type: ClassMirror, properties: List<ObjectProperty<*>>): ObjectConstructor {
         val refractConstructors = type.declaredConstructors.filter { it.annotations.isPresent<RefractConstructor>() }
         if (refractConstructors.isEmpty())
-            return null
+            throw DeserializationException("No @RefractConstructor exists to create new instances")
+
         if (refractConstructors.size > 1)
             throw ObjectAnalysisException(
                 "${type.simpleName} has multiple @RefractConstructor constructors: " +

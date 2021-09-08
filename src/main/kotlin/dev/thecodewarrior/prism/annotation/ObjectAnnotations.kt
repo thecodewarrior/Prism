@@ -42,17 +42,3 @@ public annotation class RefractSetter(val value: String)
  */
 @Target(AnnotationTarget.CONSTRUCTOR)
 public annotation class RefractConstructor(val value: Array<String> = [])
-
-/**
- * Marks a property as mutable, allowing Prism to modify it even if the underlying field is `final`. Adding this
- * annotation to an already mutable property or at the same time as [RefractImmutable] is considered an error.
- */
-@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
-public annotation class RefractMutable
-
-/**
- * Marks a property as immutable, disallowing Prism from modifying it even if it is normally mutable. Adding this
- * annotation to an already immutable property or at the same time as [RefractMutable] is considered an error.
- */
-@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
-public annotation class RefractImmutable
