@@ -14,11 +14,25 @@ public class Prism<T: Serializer<*>> {
     private val _factories = mutableListOf<SerializerFactory<T>>()
     public val factories: List<SerializerFactory<T>> = _factories.unmodifiableView()
 
-    public operator fun get(mirror: TypeMirror): Lazy<T> {
-        @Suppress("NAME_SHADOWING")
+    public operator fun get(type: TypeMirror): Lazy<T> {
+        var mirror = type
+        if(mirror is WildcardMirror) {
+            mirror = mirror.upperBound
+                ?: throw InvalidTypeException("Wildcard `$mirror` can't be serialized since it has no upper bound")
+
+            if(mirror !is ConcreteTypeMirror) {
+                throw InvalidTypeException(
+                    "${mirror.javaClass.simpleName} `$mirror` (the extracted upper bound from `$type`) can't " +
+                            "be serialized. Only concrete types (or type variables specialized to be concrete types) " +
+                            "can be serialized"
+                )
+            }
+        }
         if(mirror !is ConcreteTypeMirror) {
-            throw InvalidTypeException("${mirror.javaClass.simpleName} `$mirror` can't be serialized. " +
-                "Only concrete types (or type variables specialized to be concrete types) can be serialized")
+            throw InvalidTypeException(
+                "${mirror.javaClass.simpleName} `$mirror` can't be serialized. Only concrete types " +
+                        "(or type variables specialized to be concrete types) can be serialized"
+            )
         }
 
         _serializers[mirror]?.also {
