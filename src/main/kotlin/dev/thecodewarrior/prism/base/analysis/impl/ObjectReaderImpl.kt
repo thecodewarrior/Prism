@@ -61,7 +61,8 @@ internal class ObjectReaderImpl<T: Any, S: Serializer<*>>(val analyzer: ObjectAn
         }
 
         override fun setValue(value: Any?) {
-            TODO("Not yet implemented")
+            value_ = value
+            valueExists = true
         }
     }
 }
