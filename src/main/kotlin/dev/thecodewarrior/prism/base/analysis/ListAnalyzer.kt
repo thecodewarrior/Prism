@@ -28,6 +28,7 @@ public class ListAnalyzer<T, S: Serializer<*>>(prism: Prism<S>, type: ClassMirro
         }
 
         override fun padToLength(length: Int) {
+            buffer.ensureCapacity(length)
             while(buffer.size < length)
                 buffer.add(null)
         }

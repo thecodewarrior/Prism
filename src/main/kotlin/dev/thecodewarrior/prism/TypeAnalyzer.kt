@@ -24,7 +24,9 @@ public abstract class TypeAnalyzer<T: Any, R: TypeReader<T>, W: TypeWriter<T>, S
     private val writerPool = ConcurrentLinkedQueue<W>()
 
     public fun getReader(): R {
-        return readerPool.poll() ?: createReader()
+        val reader = readerPool.poll() ?: createReader()
+        reader.start()
+        return reader
     }
 
     public fun getWriter(value: T): W {
@@ -57,6 +59,12 @@ public interface TypeReader<T: Any>: AutoCloseable {
      * Clears this reader's state and returns it to the [TypeAnalyzer]'s pool
      */
     public fun release()
+
+    /**
+     * Starts the reader, potentially initializing state for a read
+     */
+    public fun start() {
+    }
 
     @JvmDefault
     override fun close() {
